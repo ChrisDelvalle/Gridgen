@@ -1,0 +1,15 @@
+Previous project/
+.DS_Store
+coverage/
+dist/
+node_modules/
+release/
+*.pem
+*.zip
+
+# Vite
+apps/web/dist/
+
+# Local env
+.env
+.env.*

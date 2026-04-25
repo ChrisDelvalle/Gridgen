@@ -1,0 +1,51 @@
+{
+  "name": "gridgen",
+  "private": true,
+  "packageManager": "bun@1.3.12",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "overrides": {
+    "minimatch": "^10.2.3"
+  },
+  "scripts": {
+    "dev": "bun --filter @gridgen/web dev",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.tools.json && bun --filter @gridgen/web typecheck",
+    "lint": "eslint . --max-warnings=0 --report-unused-disable-directives-severity error --no-cache",
+    "lint:fix": "eslint . --fix --max-warnings=0 --report-unused-disable-directives-severity error --no-cache",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "fix": "bun run lint:fix && bun run format:write",
+    "deadcode": "knip",
+    "test": "bun test --pass-with-no-tests",
+    "test:flake": "bun run scripts/check-flaky-tests.ts",
+    "coverage": "bun test --coverage --pass-with-no-tests",
+    "build": "bun --filter @gridgen/web build",
+    "build:web": "bun --filter @gridgen/web build",
+    "audit": "bun audit",
+    "secrets": "gitleaks detect --source . --redact --no-banner",
+    "check": "bun run typecheck && bun run lint && bun run format && bun run deadcode && bun run test && bun run build",
+    "check:release": "bun run check && bun run coverage && bun run audit && bun run secrets"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/bun": "1.3.12",
+    "@types/node": "^24.12.2",
+    "eslint": "10.2.1",
+    "eslint-plugin-jsdoc": "62.9.0",
+    "eslint-plugin-no-unsanitized": "4.1.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "eslint-plugin-regexp": "3.1.0",
+    "eslint-plugin-simple-import-sort": "13.0.0",
+    "eslint-plugin-sonarjs": "4.0.0",
+    "eslint-plugin-unicorn": "64.0.0",
+    "globals": "17.5.0",
+    "knip": "6.4.1",
+    "prettier": "3.8.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "8.58.2"
+  }
+}
