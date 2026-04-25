@@ -32,51 +32,51 @@ for implementation work and definitions of done.
 
 ## Milestone 2: Workspace Package Baseline
 
-- [ ] Add the `packages/io` workspace package with a public `src/index.ts`.
-- [ ] Ensure workspace package names match the design: `@gridgen/core`,
+- [x] Add the `packages/io` workspace package with a public `src/index.ts`.
+- [x] Ensure workspace package names match the design: `@gridgen/core`,
       `@gridgen/io`, `@gridgen/server`, `@gridgen/cli`, and `@gridgen/web`.
-- [ ] Configure workspace dependencies so `cli` can depend on `server`, `io`,
+- [x] Configure workspace dependencies so `cli` can depend on `server`, `io`,
       and `core`; `server` can depend on `io` and `core`; `io` can depend on
       `core`; and `core` has no project package dependencies.
-- [ ] Keep all package public exports intentional through package `exports`
+- [x] Keep all package public exports intentional through package `exports`
       fields.
-- [ ] Remove leftover Vite starter assets and placeholder UI that are no longer
+- [x] Remove leftover Vite starter assets and placeholder UI that are no longer
       part of the product direction.
-- [ ] Add minimal package README or source comments only where needed to clarify
+- [x] Add minimal package README or source comments only where needed to clarify
       package ownership.
 
 ## Milestone 3: Core Result And Error Model
 
-- [ ] Define the shared `Result<Value, Failure>` type.
-- [ ] Define the initial `GridgenError` discriminated union with all error codes
+- [x] Define the shared `Result<Value, Failure>` type.
+- [x] Define the initial `GridgenError` discriminated union with all error codes
       listed in `DESIGN.md`.
-- [ ] Add helpers for constructing common validation, path, asset, filesystem,
+- [x] Add helpers for constructing common validation, path, asset, filesystem,
       render, and server errors.
-- [ ] Ensure every error can carry safe contextual fields such as collection ID,
+- [x] Ensure every error can carry safe contextual fields such as collection ID,
       section ID, item ID, field path, and safe display path.
-- [ ] Add a boundary-safe error serialization shape for CLI/server/UI use.
-- [ ] Keep raw exceptions and stack traces out of browser-facing error payloads.
+- [x] Add a boundary-safe error serialization shape for CLI/server/UI use.
+- [x] Keep raw exceptions and stack traces out of browser-facing error payloads.
 
 ## Milestone 4: Core Domain Types And Schema Parsing
 
-- [ ] Add `zod` to `@gridgen/core` when schema parsing implementation begins.
-- [ ] Define branded or otherwise constrained types for collection IDs, section
+- [x] Add `zod` to `@gridgen/core` when schema parsing implementation begins.
+- [x] Define branded or otherwise constrained types for collection IDs, section
       IDs, item IDs, slugs, safe file names, and safe local links.
-- [ ] Define draft collection, renderable collection, section, item, image,
+- [x] Define draft collection, renderable collection, section, item, image,
       crop, and link domain types.
-- [ ] Implement `parseDraftCollection(input: unknown)`.
-- [ ] Implement `toRenderableCollection(draft)`.
-- [ ] Implement `parseRenderableCollection(input: unknown)`.
-- [ ] Enforce `schemaVersion: 1` and reject unsupported schema versions with a
+- [x] Implement `parseDraftCollection(input: unknown)`.
+- [x] Implement `toRenderableCollection(draft)`.
+- [x] Implement `parseRenderableCollection(input: unknown)`.
+- [x] Enforce `schemaVersion: 1` and reject unsupported schema versions with a
       structured error.
-- [ ] Reject duplicate section IDs and duplicate item IDs within a collection.
-- [ ] Reject renderable collections with empty titles, empty section names,
+- [x] Reject duplicate section IDs and duplicate item IDs within a collection.
+- [x] Reject renderable collections with empty titles, empty section names,
       empty item titles, missing images, or invalid links.
-- [ ] Validate image crop values as finite, positive percentage rectangles
+- [x] Validate image crop values as finite, positive percentage rectangles
       inside the source image coordinate space.
-- [ ] Validate item links as either `http:`/`https:` absolute URLs or safe
+- [x] Validate item links as either `http:`/`https:` absolute URLs or safe
       site-local paths.
-- [ ] Keep schema migration functions explicit, pure, and isolated even if only
+- [x] Keep schema migration functions explicit, pure, and isolated even if only
       version 1 exists initially.
 
 ## Milestone 5: Core Collection Operations

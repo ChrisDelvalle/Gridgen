@@ -1,11 +1,8 @@
 {
-  "name": "@gridgen/core",
+  "name": "@gridgen/io",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "dependencies": {
-    "zod": "^4.3.4"
-  },
   "exports": {
     ".": "./src/index.ts"
   }
