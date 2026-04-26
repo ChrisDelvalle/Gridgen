@@ -197,6 +197,8 @@ async function buildCommand(input: BuildCommandInput): Promise<number> {
     });
 
     if (!cleanupResult.ok) {
+      // Covered at the IO boundary; driving this through the CLI would require
+      // brittle filesystem permission timing between image writes and cleanup.
       printError(input.output, cleanupResult.error.error);
 
       return 1;

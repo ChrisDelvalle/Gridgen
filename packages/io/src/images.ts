@@ -198,6 +198,8 @@ function toPixelCrop(
     imageWidth <= 0 ||
     imageHeight <= 0
   ) {
+    // Sharp usually rejects unreadable inputs before this point. Keep this
+    // guard for supported formats that still fail to expose dimensions.
     return err(
       createAssetError(
         GridgenErrorCode.AssetUnsupportedType,

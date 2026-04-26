@@ -151,7 +151,9 @@ describe("gridgen build", () => {
     const output = createCliOutput();
 
     await createAndStoreRenderableDraft(workspaceRoot, "Music", "album-a.png");
-    await fs.writeFile(path.join(jekyllRoot, "_includes"), "not a directory");
+    await fs.mkdir(path.join(jekyllRoot, "assets", "gridgen", "gridgen.css"), {
+      recursive: true
+    });
 
     const exitCode = await runGridgenCli({
       argv: ["build", workspaceRoot, jekyllRoot],
@@ -161,6 +163,7 @@ describe("gridgen build", () => {
 
     expect(exitCode).toBe(1);
     expect(output.stderr.join("\n")).toContain("filesystem.writeFailed");
+    expect(output.stderr.join("\n")).toContain("possibly touched");
   });
 
   it("reports missing build source paths", async () => {

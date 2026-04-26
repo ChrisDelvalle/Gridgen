@@ -81,6 +81,39 @@ describe("gridgen validate", () => {
     expect(exitCode).toBe(1);
   });
 
+  it("rethrows unexpected command execution failures", async () => {
+    const workspaceRoot = await makeTemporaryDirectory();
+
+    await createRenderableDraft(workspaceRoot);
+
+    try {
+      await runGridgenCli({
+        argv: ["validate", workspaceRoot],
+        cwd: workspaceRoot,
+        output: {
+          error: (message) => {
+            expect(message).toBeString();
+          },
+          log: () => {
+            throw new Error("output failed");
+          }
+        }
+      });
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
+
+      if (error instanceof Error) {
+        expect(error.message).toBe("output failed");
+
+        return;
+      }
+
+      throw new TypeError("Expected an Error instance.", { cause: error });
+    }
+
+    throw new Error("Expected command execution to throw.");
+  });
+
   it("reports missing source paths and invalid collection JSON", async () => {
     const workspaceRoot = await makeTemporaryDirectory();
     const missingOutput = createCliOutput();
@@ -117,6 +150,23 @@ describe("gridgen validate", () => {
 
     expect(exitCode).toBe(1);
     expect(output.stderr.join("\n")).toContain("filesystem.readFailed");
+  });
+
+  it("rejects source paths that are neither files nor directories", async () => {
+    const workspaceRoot = await makeTemporaryDirectory();
+    const fifoPath = path.join(workspaceRoot, "source-fifo");
+    const output = createCliOutput();
+
+    Bun.spawnSync(["mkfifo", fifoPath]);
+
+    const exitCode = await runGridgenCli({
+      argv: ["validate", fifoPath],
+      cwd: workspaceRoot,
+      output
+    });
+
+    expect(exitCode).toBe(1);
+    expect(output.stderr.join("\n")).toContain("path.unsafe");
   });
 
   it("infers single-file workspaces outside a collections directory", async () => {

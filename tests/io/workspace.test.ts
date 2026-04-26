@@ -46,11 +46,16 @@ describe("source workspace IO", () => {
 
   it("serializes site-local links without leaking value wrappers", async () => {
     const workspaceRoot = await makeTemporaryDirectory();
-    const collection = unwrapOk(parseDraftCollection(createPersistedRenderableCollection("/albums/a/")));
+    const collection = unwrapOk(
+      parseDraftCollection(createPersistedRenderableCollection("/albums/a/"))
+    );
 
     await writeCollectionFile({ collection, workspaceRoot });
 
-    const rawJson = await fs.readFile(path.join(workspaceRoot, "collections", "music.json"), "utf8");
+    const rawJson = await fs.readFile(
+      path.join(workspaceRoot, "collections", "music.json"),
+      "utf8"
+    );
 
     expect(rawJson).toContain('"link": "/albums/a/"');
     expect(rawJson).not.toContain('"href"');
@@ -418,7 +423,9 @@ async function expectPresent(filePath: string): Promise<void> {
 }
 
 function createBuildPlan(jekyllRoot: string): JekyllBuildPlan {
-  const draft = unwrapOk(parseDraftCollection(createPersistedRenderableCollection("https://example.com/a")));
+  const draft = unwrapOk(
+    parseDraftCollection(createPersistedRenderableCollection("https://example.com/a"))
+  );
   const renderable = unwrapOk(toRenderableCollection(draft));
 
   return unwrapOk(planJekyllBuild({ collection: renderable, jekyllRoot }));
