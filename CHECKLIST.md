@@ -94,45 +94,45 @@ for implementation work and definitions of done.
 
 ## Milestone 6: Core Slug, Link, And Path Planning
 
-- [ ] Implement one canonical slug normalization function.
-- [ ] Implement safe file-name normalization for uploaded source image names.
-- [ ] Implement link parsing for absolute URLs and safe Jekyll/local paths.
-- [ ] Implement path traversal rejection for source asset references and output
+- [x] Implement one canonical slug normalization function.
+- [x] Implement safe file-name normalization for uploaded source image names.
+- [x] Implement link parsing for absolute URLs and safe Jekyll/local paths.
+- [x] Implement path traversal rejection for source asset references and output
       paths.
-- [ ] Implement source workspace path planning for `collections/`,
+- [x] Implement source workspace path planning for `collections/`,
       `assets/<collection-id>/sources/`, and `.trash/`.
-- [ ] Implement Jekyll output path planning for `_includes/gridgen/`,
+- [x] Implement Jekyll output path planning for `_includes/gridgen/`,
       `assets/gridgen/gridgen.css`, and `assets/gridgen/<collection-id>/`.
-- [ ] Ensure path planning returns a manifest and never writes files.
-- [ ] Ensure all planned output paths are inside the selected Jekyll root.
+- [x] Ensure path planning returns a manifest and never writes files.
+- [x] Ensure all planned output paths are inside the selected Jekyll root.
 
 ## Milestone 7: Core Static Renderer
 
-- [ ] Implement HTML escaping for all rendered text and attribute values.
-- [ ] Implement `renderGridHtml` for one renderable collection.
-- [ ] Render one include per collection with the generated-by marker comment.
-- [ ] Include the shared stylesheet link using Jekyll `relative_url`.
-- [ ] Render sections and items in saved order.
-- [ ] Render item descriptions only when present and non-empty after trimming.
-- [ ] Default missing image alt text to the item title.
-- [ ] Use only generated local image paths in rendered HTML.
-- [ ] Avoid JavaScript, inline event handlers, remote scripts, and remote image
+- [x] Implement HTML escaping for all rendered text and attribute values.
+- [x] Implement `renderGridHtml` for one renderable collection.
+- [x] Render one include per collection with the generated-by marker comment.
+- [x] Include the shared stylesheet link using Jekyll `relative_url`.
+- [x] Render sections and items in saved order.
+- [x] Render item descriptions only when present and non-empty after trimming.
+- [x] Default missing image alt text to the item title.
+- [x] Use only generated local image paths in rendered HTML.
+- [x] Avoid JavaScript, inline event handlers, remote scripts, and remote image
       assets in generated output.
-- [ ] Implement `renderGridCss` with namespaced `gridgen-*` classes and
+- [x] Implement `renderGridCss` with namespaced `gridgen-*` classes and
       responsive CSS Grid.
-- [ ] Keep renderer functions pure: no filesystem reads/writes and no image
+- [x] Keep renderer functions pure: no filesystem reads/writes and no image
       processing.
 
 ## Milestone 8: Core Build Planner
 
-- [ ] Implement `planJekyllBuild` for a single renderable collection.
-- [ ] Include planned HTML include output, shared CSS output, and generated image
+- [x] Implement `planJekyllBuild` for a single renderable collection.
+- [x] Include planned HTML include output, shared CSS output, and generated image
       asset outputs in the build manifest.
-- [ ] Derive generated WebP image names deterministically from stable item IDs.
-- [ ] Plan stale generated-file handling only within
+- [x] Derive generated WebP image names deterministically from stable item IDs.
+- [x] Plan stale generated-file handling only within
       `assets/gridgen/<collection-id>/`.
-- [ ] Ensure repeated build planning for the same input is deterministic.
-- [ ] Ensure the build planner can represent failures before any edge writer
+- [x] Ensure repeated build planning for the same input is deterministic.
+- [x] Ensure the build planner can represent failures before any edge writer
       touches the filesystem.
 
 ## Milestone 9: IO Workspace And Atomic Writers

@@ -14,25 +14,18 @@ import type {
   RenderableCollection,
   RenderableItem,
   RenderableSection,
-  SafeFileName,
-  SafeLocalLink,
-  SectionId,
-  Slug
+  SectionId
 } from "../collection/types";
 import {
   createAssetError,
-  createPathError,
   createValidationError,
   type GridgenError,
   GridgenErrorCode
 } from "../errors/errors";
+import { parseDraftLink, parseSafeFileName, parseSlug } from "../paths/path-planning";
 import { err, ok, type Result } from "../result/result";
 
 const currentSchemaVersion = 1;
-const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
-const safeFileNamePattern = /^\w[\w.-]*$/u;
-const schemePattern = /^[A-Za-z][A-Za-z0-9+.-]*:/u;
-
 const rawCropSchema = z
   .object({
     height: z.number(),
@@ -203,125 +196,6 @@ export function parseItemId(input: string, fieldPath = "id"): Result<ItemId, Gri
   }
 
   return ok({ value: slug.value.value });
-}
-
-/**
- * Parses already normalized slug text.
- *
- * @param input Candidate slug.
- * @param fieldPath Logical field path for diagnostics.
- * @returns Slug or a structured validation failure.
- */
-export function parseSlug(input: string, fieldPath = "slug"): Result<Slug, GridgenError> {
-  if (!slugPattern.test(input)) {
-    return err(
-      createPathError(GridgenErrorCode.PathUnsafe, "Expected a slug-safe identifier.", {
-        fieldPath
-      })
-    );
-  }
-
-  return ok({ value: input });
-}
-
-/**
- * Parses a safe file name.
- *
- * @param input Candidate file name.
- * @param fieldPath Logical field path for diagnostics.
- * @returns Safe file name or a structured validation failure.
- */
-export function parseSafeFileName(
-  input: string,
-  fieldPath = "sourceFileName"
-): Result<SafeFileName, GridgenError> {
-  if (!isSafeFileName(input)) {
-    return err(
-      createPathError(GridgenErrorCode.PathUnsafe, "Expected a safe file name.", {
-        fieldPath
-      })
-    );
-  }
-
-  return ok({ value: input });
-}
-
-/**
- * Parses a safe site-local link.
- *
- * @param input Candidate local link.
- * @param fieldPath Logical field path for diagnostics.
- * @returns Safe local link or a structured validation failure.
- */
-export function parseSafeLocalLink(
-  input: string,
-  fieldPath = "link"
-): Result<SafeLocalLink, GridgenError> {
-  if (!isSafeLocalLink(input)) {
-    return err(
-      createValidationError(GridgenErrorCode.ItemInvalidLink, "Expected a safe local link.", {
-        fieldPath
-      })
-    );
-  }
-
-  return ok({ value: input });
-}
-
-/**
- * Parses a draft item link.
- *
- * @param input Candidate link text.
- * @param fieldPath Logical field path for diagnostics.
- * @returns Draft link or a structured validation failure.
- */
-export function parseDraftLink(input: string, fieldPath = "link"): Result<DraftLink, GridgenError> {
-  const trimmed = input.trim();
-
-  if (trimmed.length === 0) {
-    return ok({ type: "empty" });
-  }
-
-  return parseGridLink(trimmed, fieldPath);
-}
-
-/**
- * Parses a renderable item link.
- *
- * @param input Candidate link text.
- * @param fieldPath Logical field path for diagnostics.
- * @returns Renderable link or a structured validation failure.
- */
-export function parseGridLink(input: string, fieldPath = "link"): Result<GridLink, GridgenError> {
-  if (isAbsoluteHttpLink(input)) {
-    return ok({
-      href: input,
-      type: "absolute"
-    });
-  }
-
-  if (schemePattern.test(input) || input.startsWith("//")) {
-    return err(
-      createValidationError(
-        GridgenErrorCode.ItemInvalidLink,
-        "Expected an HTTP(S) or local link.",
-        {
-          fieldPath
-        }
-      )
-    );
-  }
-
-  const localLink = parseSafeLocalLink(input, fieldPath);
-
-  if (!localLink.ok) {
-    return localLink;
-  }
-
-  return ok({
-    href: localLink.value,
-    type: "site"
-  });
 }
 
 /**
@@ -729,54 +603,6 @@ function parseNonEmptyText(
   }
 
   return ok({ value });
-}
-
-function isAbsoluteHttpLink(input: string): boolean {
-  try {
-    const url = new URL(input);
-
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function isSafeFileName(input: string): boolean {
-  return (
-    safeFileNamePattern.test(input) &&
-    input !== "." &&
-    input !== ".." &&
-    !input.includes("..") &&
-    !input.includes("/") &&
-    !input.includes("\\")
-  );
-}
-
-function isSafeLocalLink(input: string): boolean {
-  const trimmed = input.trim();
-
-  if (
-    trimmed.length === 0 ||
-    trimmed.startsWith("//") ||
-    trimmed.includes("\\") ||
-    schemePattern.test(trimmed)
-  ) {
-    return false;
-  }
-
-  return !getPathOnly(trimmed).split("/").includes("..");
-}
-
-function getPathOnly(input: string): string {
-  const queryIndex = input.indexOf("?");
-  const hashIndex = input.indexOf("#");
-  const candidates = [queryIndex, hashIndex].filter((index) => index >= 0);
-
-  if (candidates.length === 0) {
-    return input;
-  }
-
-  return input.slice(0, Math.min(...candidates));
 }
 
 function isValidCrop(crop: ImageCrop): boolean {

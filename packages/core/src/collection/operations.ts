@@ -4,6 +4,7 @@ import {
   type GridgenError,
   GridgenErrorCode
 } from "../errors/errors";
+import { normalizeSlug } from "../paths/path-planning";
 import { err, ok, type Result } from "../result/result";
 import type {
   CollectionId,
@@ -12,17 +13,12 @@ import type {
   DraftItemPatch,
   DraftSection,
   ItemId,
-  SectionId,
-  Slug
+  SectionId
 } from "./types";
 
 const starterSectionName = "Section 1";
 const untitledSectionIdBase = "section";
 const untitledItemIdBase = "item";
-const combiningMarksPattern = /\p{Mark}+/gu;
-const invalidSlugPattern = /[^a-z0-9]+/gu;
-const repeatedSeparatorPattern = /-+/gu;
-const trimSeparatorPattern = /^-+|-+$/gu;
 
 /**
  * Supported collection mutation operations.
@@ -176,37 +172,6 @@ export type CollectionOperation =
   | ReorderSectionOperation
   | RenameSectionOperation
   | UpdateItemOperation;
-
-/**
- * Normalizes display text into a slug-safe identifier base.
- *
- * @param input Source text to normalize.
- * @returns Normalized slug or a structured failure when no safe slug remains.
- */
-export function normalizeSlug(input: string): Result<Slug, GridgenError> {
-  const slug = input
-    .trim()
-    .toLowerCase()
-    .normalize("NFKD")
-    .replaceAll(combiningMarksPattern, "")
-    .replaceAll(invalidSlugPattern, "-")
-    .replaceAll(repeatedSeparatorPattern, "-")
-    .replaceAll(trimSeparatorPattern, "");
-
-  if (slug.length === 0) {
-    return err(
-      createValidationError(
-        GridgenErrorCode.CollectionEmptyTitle,
-        "Expected text that can produce a slug-safe identifier.",
-        {
-          fieldPath: "title"
-        }
-      )
-    );
-  }
-
-  return ok({ value: slug });
-}
 
 /**
  * Creates a new draft collection with one starter section.

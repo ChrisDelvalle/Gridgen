@@ -1,3 +1,10 @@
+export { planJekyllBuild } from "./build/build-planner";
+export type {
+  JekyllBuildInput,
+  JekyllBuildPlan,
+  PlannedImageOutput,
+  PlannedTextOutput
+} from "./build/build-planner";
 export {
   createAssetError,
   createFilesystemError,
@@ -39,7 +46,6 @@ export type {
 export {
   CollectionOperationType,
   createCollectionDraft,
-  normalizeSlug,
   updateCollection
 } from "./collection/operations";
 export type {
@@ -56,16 +62,49 @@ export type {
   UpdateItemOperation
 } from "./collection/operations";
 export {
-  parseCollectionId,
-  parseDraftCollection,
   parseDraftLink,
   parseGridLink,
+  parseAbsolutePath,
+  normalizeSafeFileName,
+  normalizeSlug,
+  parseSafeFileName,
+  parseSafeLocalLink,
+  parseSlug,
+  planChildPath,
+  planJekyllOutputPaths,
+  planSourceWorkspacePaths
+} from "./paths/path-planning";
+export type {
+  AbsolutePath,
+  JekyllOutputPaths,
+  PlannedChildPathInput,
+  PlannedPath,
+  RelativePath,
+  SourceWorkspacePaths,
+  SourceWorkspacePathsInput,
+  JekyllOutputPathsInput
+} from "./paths/path-planning";
+export {
+  createJekyllAssetUrlExpression,
+  prepareRenderGrid,
+  renderGridCss,
+  renderGridHtml
+} from "./render/grid-renderer";
+export type {
+  JekyllAssetUrlExpression,
+  PrepareRenderGridInput,
+  PreparedRenderImage,
+  RenderGridImage,
+  RenderGridInput,
+  RenderGridItem,
+  RenderGridSection
+} from "./render/grid-renderer";
+export {
+  parseCollectionId,
+  parseDraftCollection,
   parseImageCrop,
   parseItemId,
   parseRenderableCollection,
-  parseSafeFileName,
-  parseSafeLocalLink,
   parseSectionId,
-  parseSlug,
   toRenderableCollection
 } from "./schema/collection-schema";
