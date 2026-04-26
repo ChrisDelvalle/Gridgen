@@ -34,6 +34,7 @@
     "@gridgen/cli": "workspace:*",
     "@gridgen/core": "workspace:*",
     "@gridgen/io": "workspace:*",
+    "@gridgen/server": "workspace:*",
     "@types/bun": "1.3.12",
     "@types/node": "^24.12.2",
     "eslint": "10.2.1",

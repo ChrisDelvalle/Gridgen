@@ -209,16 +209,16 @@ for implementation work and definitions of done.
 
 ## Milestone 14: Local Server Foundation
 
-- [ ] Add `hono` to `@gridgen/server` when server implementation begins.
-- [ ] Implement server startup for `gridgen run` with loopback-only binding.
-- [ ] Generate a per-run session token for mutating API requests.
-- [ ] Validate `Origin` for mutating requests when the header is present.
-- [ ] Avoid broad CORS.
-- [ ] Enforce JSON body size limits.
-- [ ] Enforce multipart body size limits.
-- [ ] Return structured JSON error responses derived from `GridgenError`.
-- [ ] Avoid exposing unreviewed absolute filesystem paths in browser responses.
-- [ ] Serve a health or bootstrap endpoint that lets the UI know the active
+- [x] Add `hono` to `@gridgen/server` when server implementation begins.
+- [x] Implement server startup for `gridgen run` with loopback-only binding.
+- [x] Generate a per-run session token for mutating API requests.
+- [x] Validate `Origin` for mutating requests when the header is present.
+- [x] Avoid broad CORS.
+- [x] Enforce JSON body size limits.
+- [x] Enforce multipart body size limits.
+- [x] Return structured JSON error responses derived from `GridgenError`.
+- [x] Avoid exposing unreviewed absolute filesystem paths in browser responses.
+- [x] Serve a health or bootstrap endpoint that lets the UI know the active
       source workspace and session context.
 
 ## Milestone 15: Local Server Collection API
