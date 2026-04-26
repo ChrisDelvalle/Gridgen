@@ -93,6 +93,13 @@ describe("source workspace IO", () => {
     expect(unsafeFile.ok).toBe(false);
   });
 
+  it("rejects collection writes outside an absolute workspace root", async () => {
+    const collection = unwrapOk(createCollectionDraft({ title: "Music" }));
+    const result = await writeCollectionFile({ collection, workspaceRoot: "relative" });
+
+    expect(result.ok).toBe(false);
+  });
+
   it("reports read failures and invalid JSON through structured errors", async () => {
     const workspaceRoot = await makeTemporaryDirectory();
     const missing = await readCollectionFile({
@@ -323,6 +330,13 @@ describe("generated Jekyll output IO", () => {
     });
 
     expect(missing.ok).toBe(false);
+
+    const unsafeRoot = await validateSourceAssets({
+      collection: renderableCollection,
+      workspaceRoot: "relative"
+    });
+
+    expect(unsafeRoot.ok).toBe(false);
   });
 
   it("removes stale generated assets while keeping planned outputs", async () => {
@@ -355,6 +369,29 @@ describe("generated Jekyll output IO", () => {
     await fs.writeFile(plan.cleanupDirectory.absolutePath.value, "not a directory");
 
     const result = await removeStaleGeneratedAssets({ plan });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("treats missing generated cleanup directories as already clean", async () => {
+    const jekyllRoot = await makeTemporaryDirectory();
+    const plan = createBuildPlan(jekyllRoot);
+    const result = await removeStaleGeneratedAssets({ plan });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("reports stale generated asset removal failures", async () => {
+    const jekyllRoot = await makeTemporaryDirectory();
+    const plan = createBuildPlan(jekyllRoot);
+
+    await fs.mkdir(plan.cleanupDirectory.absolutePath.value, { recursive: true });
+    await fs.writeFile(path.join(plan.cleanupDirectory.absolutePath.value, "old.webp"), "old");
+    await fs.chmod(plan.cleanupDirectory.absolutePath.value, 0o500);
+
+    const result = await removeStaleGeneratedAssets({ plan });
+
+    await fs.chmod(plan.cleanupDirectory.absolutePath.value, 0o700);
 
     expect(result.ok).toBe(false);
   });
