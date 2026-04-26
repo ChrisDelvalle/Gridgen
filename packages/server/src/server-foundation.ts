@@ -10,6 +10,8 @@ import {
 } from "@gridgen/core";
 import { Hono } from "hono";
 
+import { registerGridgenRoutes } from "./server-routes";
+
 const mutatingMethods = new Set(["DELETE", "PATCH", "POST", "PUT"]);
 const jsonContentTypePrefix = "application/json";
 const multipartContentTypePrefix = "multipart/form-data";
@@ -92,6 +94,7 @@ export interface GridgenServerApp {
  * @property allowedOrigins Extra trusted origins for mutating requests.
  * @property jsonBodyLimitBytes Maximum accepted JSON request size.
  * @property multipartBodyLimitBytes Maximum accepted multipart request size.
+ * @property sourceWorkspaceRoot Absolute active source workspace root.
  * @property sourceWorkspaceDisplayPath Reviewed display path for the active source workspace.
  */
 export interface CreateGridgenServerAppInput {
@@ -99,6 +102,7 @@ export interface CreateGridgenServerAppInput {
   readonly jsonBodyLimitBytes?: number;
   readonly multipartBodyLimitBytes?: number;
   readonly sourceWorkspaceDisplayPath?: string;
+  readonly sourceWorkspaceRoot?: string;
 }
 
 /**
@@ -110,6 +114,7 @@ export interface CreateGridgenServerAppInput {
  * @property port Port to bind. Use 0 for an ephemeral port.
  * @property serve Runtime serve adapter. Defaults to `Bun.serve`.
  * @property sourceWorkspaceDisplayPath Reviewed display path for the active source workspace.
+ * @property sourceWorkspaceRoot Absolute active source workspace root.
  */
 export interface StartGridgenServerInput {
   readonly host?: GridgenLoopbackHost;
@@ -118,6 +123,7 @@ export interface StartGridgenServerInput {
   readonly port?: number;
   readonly serve?: GridgenServeAdapter;
   readonly sourceWorkspaceDisplayPath?: string;
+  readonly sourceWorkspaceRoot?: string;
 }
 
 /**
@@ -181,6 +187,7 @@ export function createGridgenServerApp(input: CreateGridgenServerAppInput = {}):
   const multipartBodyLimitBytes =
     input.multipartBodyLimitBytes ?? GRIDGEN_MULTIPART_BODY_LIMIT_BYTES;
   const sourceWorkspaceDisplayPath = input.sourceWorkspaceDisplayPath ?? "./gridgen";
+  const sourceWorkspaceRoot = input.sourceWorkspaceRoot ?? `${process.cwd()}/gridgen`;
   const allowedOrigins = input.allowedOrigins ?? [];
   const app = new Hono();
 
@@ -241,6 +248,10 @@ export function createGridgenServerApp(input: CreateGridgenServerAppInput = {}):
       }
     })
   );
+
+  registerGridgenRoutes(app, {
+    sourceWorkspaceRoot
+  });
 
   return {
     allowedOrigins,
@@ -314,6 +325,7 @@ function createServerAppInput(input: StartGridgenServerInput): CreateGridgenServ
     jsonBodyLimitBytes?: number;
     multipartBodyLimitBytes?: number;
     sourceWorkspaceDisplayPath?: string;
+    sourceWorkspaceRoot?: string;
   } = {};
 
   if (input.jsonBodyLimitBytes !== undefined) {
@@ -326,6 +338,10 @@ function createServerAppInput(input: StartGridgenServerInput): CreateGridgenServ
 
   if (input.sourceWorkspaceDisplayPath !== undefined) {
     appInput.sourceWorkspaceDisplayPath = input.sourceWorkspaceDisplayPath;
+  }
+
+  if (input.sourceWorkspaceRoot !== undefined) {
+    appInput.sourceWorkspaceRoot = input.sourceWorkspaceRoot;
   }
 
   return appInput;
@@ -342,7 +358,7 @@ function serveWithBun(input: GridgenServeAdapterInput): GridgenServeAdapterResul
     stop: () => void;
   } = {
     stop: () => {
-      server.stop().catch(() => undefined);
+      Promise.resolve(server.stop()).catch(() => undefined);
     }
   };
 

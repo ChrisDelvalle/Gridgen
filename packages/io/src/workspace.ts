@@ -18,7 +18,8 @@ import {
   parseSlug,
   type PlannedPath,
   planSourceWorkspacePaths,
-  type Result
+  type Result,
+  serializeDraftCollection
 } from "@gridgen/core";
 
 /**
@@ -47,6 +48,15 @@ export interface IoWriteReport {
  * @property workspaceRoot Absolute source workspace root.
  */
 export interface DiscoverCollectionFilesInput {
+  readonly workspaceRoot: string;
+}
+
+/**
+ * Source workspace initialization input.
+ *
+ * @property workspaceRoot Absolute source workspace root.
+ */
+export interface EnsureSourceWorkspaceInput {
   readonly workspaceRoot: string;
 }
 
@@ -150,6 +160,49 @@ export interface RemoveStaleGeneratedAssetsInput {
 }
 
 /**
+ * Creates the source workspace directories required by the authoring server.
+ *
+ * @param input Source workspace initialization input.
+ * @returns Write report or a structured write failure.
+ */
+export async function ensureSourceWorkspace(
+  input: EnsureSourceWorkspaceInput
+): Promise<Result<IoWriteReport, IoWriteFailure>> {
+  const root = parseAbsoluteWorkspaceRoot(input.workspaceRoot, "workspaceRoot");
+
+  if (!root.ok) {
+    return err({ error: root.error, touchedPaths: [] });
+  }
+
+  const directories = [
+    root.value,
+    path.join(root.value, "collections"),
+    path.join(root.value, ".trash")
+  ];
+  const touchedPaths: string[] = [];
+
+  try {
+    for (const directory of directories) {
+      await fs.mkdir(directory, { recursive: true });
+      touchedPaths.push(directory);
+    }
+
+    return ok({ touchedPaths });
+  } catch {
+    return err({
+      error: createFilesystemError(
+        GridgenErrorCode.FilesystemWriteFailed,
+        "Failed to create source workspace.",
+        {
+          displayPath: root.value
+        }
+      ),
+      touchedPaths
+    });
+  }
+}
+
+/**
  * Discovers collection JSON files in a source workspace.
  *
  * @param input Source workspace discovery input.
@@ -250,7 +303,7 @@ export async function writeCollectionFile(
 
   return writeTextAtomically(
     paths.value.collectionFile,
-    `${JSON.stringify(toPersistedDraftCollection(input.collection), undefined, 2)}\n`
+    `${JSON.stringify(serializeDraftCollection(input.collection), undefined, 2)}\n`
   );
 }
 
@@ -635,47 +688,6 @@ function parseCollectionIdFromFileName(fileName: string): Result<CollectionId, G
   }
 
   return ok({ value: id.value.value });
-}
-
-function toPersistedDraftCollection(collection: DraftCollection): unknown {
-  return {
-    id: collection.id.value,
-    schemaVersion: collection.schemaVersion,
-    sections: collection.sections.map((section) => ({
-      id: section.id.value,
-      items: section.items.map((item) => ({
-        ...(item.description === undefined ? {} : { description: item.description }),
-        ...(item.image === undefined
-          ? {}
-          : {
-              image: {
-                ...(item.image.alt === undefined ? {} : { alt: item.image.alt }),
-                crop: item.image.crop,
-                sourceFileName: item.image.sourceFileName.value,
-                type: item.image.type
-              }
-            }),
-        id: item.id.value,
-        link: serializeDraftLink(item.link),
-        title: item.title
-      })),
-      name: section.name
-    })),
-    title: collection.title
-  };
-}
-
-function serializeDraftLink(
-  link: DraftCollection["sections"][number]["items"][number]["link"]
-): string {
-  switch (link.type) {
-    case "absolute":
-      return link.href;
-    case "empty":
-      return "";
-    case "site":
-      return link.href.value;
-  }
 }
 
 function isNodeErrorCode(error: unknown, code: string): boolean {

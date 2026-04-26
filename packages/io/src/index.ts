@@ -1,7 +1,13 @@
-export { maxSourceImageBytes, processPlannedImage, processPlannedImages } from "./images";
-export type { ProcessPlannedImageInput } from "./images";
+export {
+  createPreviewImage,
+  maxSourceImageBytes,
+  processPlannedImage,
+  processPlannedImages
+} from "./images";
+export type { CreatePreviewImageInput, ProcessPlannedImageInput } from "./images";
 export {
   discoverCollectionFiles,
+  ensureSourceWorkspace,
   readCollectionFile,
   removeStaleGeneratedAssets,
   softDeleteCollection,
@@ -14,6 +20,7 @@ export {
 export type {
   DiscoverCollectionFilesInput,
   DiscoveredCollectionFile,
+  EnsureSourceWorkspaceInput,
   IoWriteFailure,
   IoWriteReport,
   ReadCollectionFileInput,

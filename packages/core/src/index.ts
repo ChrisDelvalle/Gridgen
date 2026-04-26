@@ -1,3 +1,17 @@
+export { serializeDraftCollection } from "./api/dtos";
+export type {
+  CollectionResponseDto,
+  CollectionSummaryDto,
+  CreateCollectionRequestDto,
+  DraftCollectionJson,
+  DraftItemJson,
+  DraftSectionJson,
+  GridImageJson,
+  ListCollectionsResponseDto,
+  SaveCollectionRequestDto,
+  UploadAssetResponseDto,
+  ValidateCollectionResponseDto
+} from "./api/dtos";
 export { planJekyllBuild } from "./build/build-planner";
 export type {
   JekyllBuildInput,

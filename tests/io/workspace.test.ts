@@ -12,6 +12,7 @@ import {
 } from "@gridgen/core";
 import {
   discoverCollectionFiles,
+  ensureSourceWorkspace,
   readCollectionFile,
   removeStaleGeneratedAssets,
   softDeleteCollection,
@@ -96,6 +97,27 @@ describe("source workspace IO", () => {
     expect(relativeRoot.ok).toBe(false);
     expect(missingCollections.ok).toBe(false);
     expect(unsafeFile.ok).toBe(false);
+  });
+
+  it("creates source workspace directories and rejects relative roots", async () => {
+    const workspaceRoot = await makeTemporaryDirectory();
+    const created = await ensureSourceWorkspace({ workspaceRoot });
+    const rejected = await ensureSourceWorkspace({ workspaceRoot: "relative" });
+
+    expect(created.ok).toBe(true);
+    await expectDirectory(path.join(workspaceRoot, "collections"));
+    await expectDirectory(path.join(workspaceRoot, ".trash"));
+    expect(rejected.ok).toBe(false);
+  });
+
+  it("reports source workspace creation failures with touched paths", async () => {
+    const workspaceRoot = await makeTemporaryDirectory();
+
+    await fs.writeFile(path.join(workspaceRoot, "collections"), "not a directory");
+
+    const result = await ensureSourceWorkspace({ workspaceRoot });
+
+    expect(result.ok).toBe(false);
   });
 
   it("rejects collection writes outside an absolute workspace root", async () => {
@@ -414,6 +436,12 @@ async function expectMissing(filePath: string): Promise<void> {
   }
 
   throw new Error(`Expected missing file: ${filePath}`);
+}
+
+async function expectDirectory(directoryPath: string): Promise<void> {
+  const stats = await fs.stat(directoryPath);
+
+  expect(stats.isDirectory()).toBe(true);
 }
 
 async function expectPresent(filePath: string): Promise<void> {

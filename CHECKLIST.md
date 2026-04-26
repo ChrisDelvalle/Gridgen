@@ -223,55 +223,55 @@ for implementation work and definitions of done.
 
 ## Milestone 15: Local Server Collection API
 
-- [ ] Implement `GET /api/collections`.
-- [ ] Implement `POST /api/collections`.
-- [ ] Implement `GET /api/collections/:collectionId`.
-- [ ] Implement `PUT /api/collections/:collectionId`.
-- [ ] Implement `DELETE /api/collections/:collectionId` using soft delete.
-- [ ] Implement `POST /api/collections/:collectionId/validate`.
-- [ ] Ensure API request and response DTOs are browser-safe exports from
+- [x] Implement `GET /api/collections`.
+- [x] Implement `POST /api/collections`.
+- [x] Implement `GET /api/collections/:collectionId`.
+- [x] Implement `PUT /api/collections/:collectionId`.
+- [x] Implement `DELETE /api/collections/:collectionId` using soft delete.
+- [x] Implement `POST /api/collections/:collectionId/validate`.
+- [x] Ensure API request and response DTOs are browser-safe exports from
       `@gridgen/core`.
-- [ ] Ensure save routes persist draft collections and return the saved snapshot.
-- [ ] Ensure validation routes report draft/renderable errors without writing
+- [x] Ensure save routes persist draft collections and return the saved snapshot.
+- [x] Ensure validation routes report draft/renderable errors without writing
       build output.
-- [ ] Ensure collection API routes do not duplicate domain validation already
+- [x] Ensure collection API routes do not duplicate domain validation already
       owned by `core`.
 
 ## Milestone 16: Local Server Asset API
 
-- [ ] Implement `POST /api/collections/:collectionId/assets`.
-- [ ] Store uploaded source images under
+- [x] Implement `POST /api/collections/:collectionId/assets`.
+- [x] Store uploaded source images under
       `assets/<collection-id>/sources/`.
-- [ ] Return a normalized image reference with default crop metadata.
-- [ ] Reject unsupported file types before storing when possible.
-- [ ] Reject oversized uploads before image processing.
-- [ ] Normalize unsafe source file names.
-- [ ] Ensure uploaded asset references remain relative and portable.
-- [ ] Ensure upload failures do not leave misleading item state in the saved
+- [x] Return a normalized image reference with default crop metadata.
+- [x] Reject unsupported file types before storing when possible.
+- [x] Reject oversized uploads before image processing.
+- [x] Normalize unsafe source file names.
+- [x] Ensure uploaded asset references remain relative and portable.
+- [x] Ensure upload failures do not leave misleading item state in the saved
       collection.
 
 ## Milestone 17: Preview Route
 
-- [ ] Implement `GET /preview/:collectionId`.
-- [ ] Validate the selected collection as renderable before previewing.
-- [ ] Generate preview HTML through the same core renderer used by
+- [x] Implement `GET /preview/:collectionId`.
+- [x] Validate the selected collection as renderable before previewing.
+- [x] Generate preview HTML through the same core renderer used by
       `gridgen build`.
-- [ ] Ensure preview uses generated or preview-processed local image assets.
-- [ ] Show structured validation failures when a collection is not renderable.
-- [ ] Ensure preview is a full route that can be resized naturally in the
+- [x] Ensure preview uses generated or preview-processed local image assets.
+- [x] Show structured validation failures when a collection is not renderable.
+- [x] Ensure preview is a full route that can be resized naturally in the
       browser.
-- [ ] Prevent React authoring components from approximating static output.
+- [x] Prevent React authoring components from approximating static output.
 
 ## Milestone 18: CLI Run
 
-- [ ] Implement `gridgen run [--source <dir>] [--port <port>] [--open]`.
-- [ ] Default the source workspace to `./gridgen`.
-- [ ] Create the source workspace structure when needed.
-- [ ] Start the local authoring server.
-- [ ] Print the local authoring URL by default.
-- [ ] Open the browser only when `--open` is passed.
-- [ ] Surface startup failures with clear CLI messages.
-- [ ] Ensure `run` uses server package startup behavior instead of duplicating
+- [x] Implement `gridgen run [--source <dir>] [--port <port>] [--open]`.
+- [x] Default the source workspace to `./gridgen`.
+- [x] Create the source workspace structure when needed.
+- [x] Start the local authoring server.
+- [x] Print the local authoring URL by default.
+- [x] Open the browser only when `--open` is passed.
+- [x] Surface startup failures with clear CLI messages.
+- [x] Ensure `run` uses server package startup behavior instead of duplicating
       HTTP setup in the CLI.
 
 ## Milestone 19: Web UI Foundation And shadcn

@@ -15,6 +15,7 @@ import {
   updateCollection
 } from "@gridgen/core";
 import {
+  createPreviewImage,
   maxSourceImageBytes,
   processPlannedImage,
   processPlannedImages,
@@ -77,6 +78,56 @@ describe("image processing", () => {
     const result = await processPlannedImages({ plan, workspaceRoot: "relative" });
 
     expect(unwrapErr(result).error.code).toBe(GridgenErrorCode.PathUnsafe);
+  });
+
+  it("generates preview WebP bytes without writing output", async () => {
+    const workspaceRoot = await makeTemporaryDirectory("gridgen-image-workspace-");
+    const jekyllRoot = await makeTemporaryDirectory("gridgen-image-jekyll-");
+    const plan = await createImagePlan(workspaceRoot, jekyllRoot, createPng());
+    const imageOutput = plan.imageOutputs[0];
+
+    if (imageOutput === undefined) {
+      throw new Error("Expected image output.");
+    }
+
+    const result = await createPreviewImage({
+      collectionId: plan.collectionId,
+      crop: imageOutput.crop,
+      sourceFileName: imageOutput.sourceFileName,
+      workspaceRoot
+    });
+
+    expect(unwrapOk(result).subarray(0, 4).toString()).toBe("RIFF");
+  });
+
+  it("reports preview image planning and source validation failures", async () => {
+    const workspaceRoot = await makeTemporaryDirectory("gridgen-image-workspace-");
+    const jekyllRoot = await makeTemporaryDirectory("gridgen-image-jekyll-");
+    const plan = await createImagePlan(workspaceRoot, jekyllRoot, createPng());
+    const imageOutput = plan.imageOutputs[0];
+
+    if (imageOutput === undefined) {
+      throw new Error("Expected image output.");
+    }
+
+    const unsafeRoot = await createPreviewImage({
+      collectionId: plan.collectionId,
+      crop: imageOutput.crop,
+      sourceFileName: imageOutput.sourceFileName,
+      workspaceRoot: "relative"
+    });
+
+    await fs.rm(path.join(workspaceRoot, "assets", "music", "sources", "album-a.png"));
+
+    const missingSource = await createPreviewImage({
+      collectionId: plan.collectionId,
+      crop: imageOutput.crop,
+      sourceFileName: imageOutput.sourceFileName,
+      workspaceRoot
+    });
+
+    expect(unwrapErr(unsafeRoot).code).toBe(GridgenErrorCode.PathUnsafe);
+    expect(unwrapErr(missingSource).code).toBe(GridgenErrorCode.AssetMissingFile);
   });
 
   it("rejects unsupported raster inputs", async () => {

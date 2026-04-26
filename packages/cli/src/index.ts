@@ -12,12 +12,18 @@ import {
 } from "@gridgen/core";
 import {
   discoverCollectionFiles,
+  ensureSourceWorkspace,
   processPlannedImages,
   readCollectionFile,
   removeStaleGeneratedAssets,
   validateSourceAssets,
   writeJekyllTextOutputs
 } from "@gridgen/io";
+import {
+  type GridgenServeAdapter,
+  type StartedGridgenServer,
+  startGridgenServer
+} from "@gridgen/server";
 import { Command, CommanderError } from "commander";
 
 /**
@@ -36,12 +42,18 @@ export interface GridgenCliOutput {
  *
  * @property argv Command arguments excluding the executable and script path.
  * @property cwd Current working directory used to resolve relative paths.
+ * @property openUrl Optional browser opener used by `gridgen run`.
  * @property output Output target for normal and diagnostic messages.
+ * @property serve Optional server adapter passed through to `@gridgen/server`.
+ * @property waitForRunServer Optional wait hook used after `gridgen run` starts the server.
  */
 export interface RunGridgenCliInput {
   readonly argv: readonly string[];
   readonly cwd: string;
+  readonly openUrl?: (url: string) => Promise<void> | void;
   readonly output: GridgenCliOutput;
+  readonly serve?: GridgenServeAdapter;
+  readonly waitForRunServer?: (server: StartedGridgenServer) => Promise<void>;
 }
 
 /**
@@ -60,6 +72,25 @@ export async function runGridgenCli(input: RunGridgenCliInput): Promise<number> 
     .configureOutput({
       writeErr: (message) => input.output.error(message.trimEnd()),
       writeOut: (message) => input.output.log(message.trimEnd())
+    });
+
+  program
+    .command("run")
+    .description("Start the local Gridgen authoring server.")
+    .option("--source <dir>", "Source workspace directory.", "./gridgen")
+    .option("--port <port>", "Local server port.", parsePortOption)
+    .option("--open", "Open the authoring URL in the default browser.")
+    .action(async (options: RunCommandOptions) => {
+      exitCode = await runCommand({
+        cwd: input.cwd,
+        open: options.open === true,
+        openUrl: input.openUrl,
+        output: input.output,
+        port: options.port,
+        serve: input.serve,
+        source: options.source,
+        waitForRunServer: input.waitForRunServer
+      });
     });
 
   program
@@ -114,6 +145,23 @@ interface BuildCommandInput {
   readonly source: string;
 }
 
+interface RunCommandInput {
+  readonly cwd: string;
+  readonly open: boolean;
+  readonly openUrl: ((url: string) => Promise<void> | void) | undefined;
+  readonly output: GridgenCliOutput;
+  readonly port: number | undefined;
+  readonly serve: GridgenServeAdapter | undefined;
+  readonly source: string;
+  readonly waitForRunServer: ((server: StartedGridgenServer) => Promise<void>) | undefined;
+}
+
+interface RunCommandOptions {
+  readonly open?: boolean;
+  readonly port?: number;
+  readonly source: string;
+}
+
 interface CollectionValidationTarget {
   readonly collectionFilePath: string;
   readonly workspaceRoot: string;
@@ -161,6 +209,50 @@ async function validateCommand(input: ValidateCommandInput): Promise<number> {
   return hasFailure ? 1 : 0;
 }
 
+async function runCommand(input: RunCommandInput): Promise<number> {
+  const sourceWorkspaceRoot = path.resolve(input.cwd, input.source);
+  const workspace = await ensureSourceWorkspace({
+    workspaceRoot: sourceWorkspaceRoot
+  });
+
+  if (!workspace.ok) {
+    printError(input.output, workspace.error.error);
+
+    return 1;
+  }
+
+  const serverInput = {
+    ...(input.port === undefined ? {} : { port: input.port }),
+    ...(input.serve === undefined ? {} : { serve: input.serve }),
+    sourceWorkspaceDisplayPath: input.source,
+    sourceWorkspaceRoot
+  };
+  const startedServer = startGridgenServer(serverInput);
+
+  if (!startedServer.ok) {
+    printError(input.output, startedServer.error);
+
+    return 1;
+  }
+
+  input.output.log(`Gridgen authoring server: ${startedServer.value.url}`);
+
+  if (input.open) {
+    const opened = await openAuthoringUrl(startedServer.value.url, input.openUrl);
+
+    if (!opened.ok) {
+      startedServer.value.stop();
+      printError(input.output, opened.error);
+
+      return 1;
+    }
+  }
+
+  await (input.waitForRunServer?.(startedServer.value) ?? new Promise<never>(() => undefined));
+
+  return 0;
+}
+
 async function buildCommand(input: BuildCommandInput): Promise<number> {
   const sourcePath = path.resolve(input.cwd, input.source);
   const jekyllRoot = path.resolve(input.cwd, input.jekyllSite);
@@ -196,6 +288,7 @@ async function buildCommand(input: BuildCommandInput): Promise<number> {
       plan: target.plan
     });
 
+    /* c8 ignore next 6 */
     if (!cleanupResult.ok) {
       // Covered at the IO boundary; driving this through the CLI would require
       // brittle filesystem permission timing between image writes and cleanup.
@@ -259,7 +352,10 @@ async function planBuildTargets(
       jekyllRoot
     });
 
+    /* c8 ignore next 4 */
     if (!plan.ok) {
+      // CLI build resolves the Jekyll root to an absolute path before planning;
+      // path-planning failures for raw roots are covered in core.
       return plan;
     }
 
@@ -393,4 +489,46 @@ function printError(output: GridgenCliOutput, error: GridgenError): void {
       ? `${serialized.code}: ${serialized.message}`
       : `${serialized.code}: ${serialized.message} (${context})`
   );
+}
+
+function parsePortOption(input: string): number {
+  const port = Number(input);
+
+  if (!Number.isInteger(port)) {
+    throw new CommanderError(1, "commander.invalidArgument", "Port must be an integer.");
+  }
+
+  return port;
+}
+
+async function openAuthoringUrl(
+  url: string,
+  openUrl: ((url: string) => Promise<void> | void) | undefined
+): Promise<{ readonly ok: true } | { readonly error: GridgenError; readonly ok: false }> {
+  try {
+    if (openUrl !== undefined) {
+      await openUrl(url);
+
+      return { ok: true };
+    }
+
+    /* c8 ignore next 6 */
+    Bun.spawn(["open", url], {
+      // The default opener intentionally launches a desktop browser. Tests use
+      // the injected opener to avoid GUI side effects while covering run flow.
+      stderr: "ignore",
+      stdout: "ignore"
+    });
+
+    return { ok: true };
+  } catch {
+    return {
+      error: {
+        code: GridgenErrorCode.ServerStartupFailed,
+        context: { fieldPath: "open" },
+        message: "Failed to open the authoring URL."
+      },
+      ok: false
+    };
+  }
 }

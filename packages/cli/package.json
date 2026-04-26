@@ -6,6 +6,7 @@
   "dependencies": {
     "@gridgen/core": "workspace:*",
     "@gridgen/io": "workspace:*",
+    "@gridgen/server": "workspace:*",
     "commander": "^14.0.2"
   },
   "bin": {

@@ -2,6 +2,7 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
 import {
+  type CollectionId,
   createAssetError,
   err,
   type GridgenError,
@@ -11,7 +12,8 @@ import {
   ok,
   type PlannedImageOutput,
   planSourceWorkspacePaths,
-  type Result
+  type Result,
+  type SafeFileName
 } from "@gridgen/core";
 import sharp from "sharp";
 
@@ -34,6 +36,21 @@ const generatedImageSizePixels = 512;
 export interface ProcessPlannedImageInput {
   readonly imageOutput: PlannedImageOutput;
   readonly plan: JekyllBuildPlan;
+  readonly workspaceRoot: string;
+}
+
+/**
+ * Preview image processing input.
+ *
+ * @property collectionId Stable owning collection ID.
+ * @property crop Percentage crop metadata.
+ * @property sourceFileName Stored source image file name.
+ * @property workspaceRoot Absolute source workspace root.
+ */
+export interface CreatePreviewImageInput {
+  readonly collectionId: CollectionId;
+  readonly crop: ImageCrop;
+  readonly sourceFileName: SafeFileName;
   readonly workspaceRoot: string;
 }
 
@@ -80,7 +97,11 @@ export async function processPlannedImages(input: {
 export async function processPlannedImage(
   input: ProcessPlannedImageInput
 ): Promise<Result<IoWriteReport, IoWriteFailure>> {
-  const sourcePath = planSourceImagePath(input);
+  const sourcePath = planSourceImagePath({
+    collectionId: input.plan.collectionId,
+    sourceFileName: input.imageOutput.sourceFileName,
+    workspaceRoot: input.workspaceRoot
+  });
 
   if (!sourcePath.ok) {
     return err({ error: sourcePath.error, touchedPaths: [] });
@@ -104,9 +125,41 @@ export async function processPlannedImage(
   });
 }
 
-function planSourceImagePath(input: ProcessPlannedImageInput): Result<string, GridgenError> {
+/**
+ * Processes one source image into preview WebP bytes without writing generated output.
+ *
+ * @param input Preview image processing input.
+ * @returns Generated WebP bytes or a structured image failure.
+ */
+export async function createPreviewImage(
+  input: CreatePreviewImageInput
+): Promise<Result<Uint8Array, GridgenError>> {
+  const sourcePath = planSourceImagePath({
+    collectionId: input.collectionId,
+    sourceFileName: input.sourceFileName,
+    workspaceRoot: input.workspaceRoot
+  });
+
+  if (!sourcePath.ok) {
+    return sourcePath;
+  }
+
+  const sizeValidation = await validateSourceImageSize(sourcePath.value);
+
+  if (!sizeValidation.ok) {
+    return sizeValidation;
+  }
+
+  return createGeneratedImageBuffer(sourcePath.value, input.crop);
+}
+
+function planSourceImagePath(input: {
+  readonly collectionId: CollectionId;
+  readonly sourceFileName: SafeFileName;
+  readonly workspaceRoot: string;
+}): Result<string, GridgenError> {
   const paths = planSourceWorkspacePaths({
-    collectionId: input.plan.collectionId,
+    collectionId: input.collectionId,
     workspaceRoot: input.workspaceRoot
   });
 
@@ -115,10 +168,7 @@ function planSourceImagePath(input: ProcessPlannedImageInput): Result<string, Gr
   }
 
   return ok(
-    path.join(
-      paths.value.collectionSourcesDirectory.absolutePath.value,
-      input.imageOutput.sourceFileName.value
-    )
+    path.join(paths.value.collectionSourcesDirectory.absolutePath.value, input.sourceFileName.value)
   );
 }
 
@@ -192,6 +242,7 @@ function toPixelCrop(
   imageWidth: number | undefined,
   imageHeight: number | undefined
 ): Result<sharp.Region, GridgenError> {
+  /* c8 ignore next 9 */
   if (
     imageWidth === undefined ||
     imageHeight === undefined ||

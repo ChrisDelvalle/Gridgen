@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@gridgen/core": "workspace:*",
+    "@gridgen/io": "workspace:*",
     "hono": "^4.10.7"
   },
   "exports": {

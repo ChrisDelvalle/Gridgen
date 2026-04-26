@@ -18,3 +18,4 @@ export type {
   StartedGridgenServer,
   StartGridgenServerInput
 } from "./server-foundation";
+export type { RegisterGridgenRoutesInput } from "./server-routes";
