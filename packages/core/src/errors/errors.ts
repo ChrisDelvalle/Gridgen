@@ -20,6 +20,9 @@ export enum GridgenErrorCode {
   PathOutsideRoot = "path.outsideRoot",
   PathUnsafe = "path.unsafe",
   RenderNotRenderable = "render.notRenderable",
+  ServerInvalidPort = "server.invalidPort",
+  ServerRequestTooLarge = "server.requestTooLarge",
+  ServerStartupFailed = "server.startupFailed",
   SectionCannotRemoveLast = "section.cannotRemoveLast",
   SectionEmptyName = "section.emptyName",
   SectionNotFound = "section.notFound",
@@ -191,7 +194,11 @@ export function createRenderError(
  * @returns Structured server error.
  */
 export function createServerError(
-  code: GridgenErrorCode.ServerUnauthorized,
+  code:
+    | GridgenErrorCode.ServerInvalidPort
+    | GridgenErrorCode.ServerRequestTooLarge
+    | GridgenErrorCode.ServerStartupFailed
+    | GridgenErrorCode.ServerUnauthorized,
   message: string,
   context: GridgenErrorContext = {}
 ): GridgenError {

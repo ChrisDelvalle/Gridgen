@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@gridgen/core": "workspace:*",
+    "hono": "^4.10.7"
+  },
   "exports": {
     ".": "./src/index.ts"
   }
