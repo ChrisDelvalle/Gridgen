@@ -16,10 +16,13 @@ export enum GridgenErrorCode {
   ItemEmptyTitle = "item.emptyTitle",
   ItemInvalidLink = "item.invalidLink",
   ItemMissingImage = "item.missingImage",
+  ItemNotFound = "item.notFound",
   PathOutsideRoot = "path.outsideRoot",
   PathUnsafe = "path.unsafe",
   RenderNotRenderable = "render.notRenderable",
+  SectionCannotRemoveLast = "section.cannotRemoveLast",
   SectionEmptyName = "section.emptyName",
+  SectionNotFound = "section.notFound",
   ServerUnauthorized = "server.unauthorized"
 }
 
@@ -189,6 +192,25 @@ export function createRenderError(
  */
 export function createServerError(
   code: GridgenErrorCode.ServerUnauthorized,
+  message: string,
+  context: GridgenErrorContext = {}
+): GridgenError {
+  return createGridgenError(code, message, context);
+}
+
+/**
+ * Constructs a collection operation failure.
+ *
+ * @param code Stable operation error code.
+ * @param message Human-readable diagnostic message.
+ * @param context Safe diagnostic context.
+ * @returns Structured operation error.
+ */
+export function createOperationError(
+  code:
+    | GridgenErrorCode.ItemNotFound
+    | GridgenErrorCode.SectionCannotRemoveLast
+    | GridgenErrorCode.SectionNotFound,
   message: string,
   context: GridgenErrorContext = {}
 ): GridgenError {

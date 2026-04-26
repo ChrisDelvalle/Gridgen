@@ -2,6 +2,7 @@ export {
   createAssetError,
   createFilesystemError,
   createGridgenError,
+  createOperationError,
   createPathError,
   createRenderError,
   createServerError,
@@ -15,6 +16,7 @@ export type { ErrResult, OkResult, Result } from "./result/result";
 export type {
   AbsoluteLink,
   CollectionId,
+  DraftItemPatch,
   DraftCollection,
   DraftItem,
   DraftLink,
@@ -34,6 +36,25 @@ export type {
   SiteLink,
   Slug
 } from "./collection/types";
+export {
+  CollectionOperationType,
+  createCollectionDraft,
+  normalizeSlug,
+  updateCollection
+} from "./collection/operations";
+export type {
+  AddItemOperation,
+  AddSectionOperation,
+  CollectionOperation,
+  CreateCollectionInput,
+  MoveItemOperation,
+  RemoveItemOperation,
+  RemoveSectionOperation,
+  RenameSectionOperation,
+  ReorderItemOperation,
+  ReorderSectionOperation,
+  UpdateItemOperation
+} from "./collection/operations";
 export {
   parseCollectionId,
   parseDraftCollection,

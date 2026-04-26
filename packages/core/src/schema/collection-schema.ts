@@ -795,11 +795,5 @@ function isValidCrop(crop: ImageCrop): boolean {
 }
 
 function firstIssuePath(error: z.ZodError): string {
-  const firstIssue = error.issues[0];
-
-  if (firstIssue === undefined) {
-    return "";
-  }
-
-  return firstIssue.path.map(String).join(".");
+  return error.issues[0]?.path.map(String).join(".") ?? "";
 }

@@ -152,6 +152,21 @@ export interface DraftItem {
 }
 
 /**
+ * Patch applied to a draft item.
+ *
+ * @property description New description, or `null` to clear it.
+ * @property image New image, or `null` to clear it.
+ * @property link New draft link value.
+ * @property title New draft title.
+ */
+export interface DraftItemPatch {
+  readonly description?: string | null;
+  readonly image?: GridImage | null;
+  readonly link?: DraftLink;
+  readonly title?: string;
+}
+
+/**
  * Renderable recommendation item.
  *
  * @property description Optional non-empty description.

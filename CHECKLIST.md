@@ -81,15 +81,15 @@ for implementation work and definitions of done.
 
 ## Milestone 5: Core Collection Operations
 
-- [ ] Implement collection creation from a title with a stable slug-safe
+- [x] Implement collection creation from a title with a stable slug-safe
       collection ID.
-- [ ] Ensure a newly created collection has one starter section.
-- [ ] Implement section creation, rename, reorder, and remove operations.
-- [ ] Implement item creation, update, move, reorder, and remove operations.
-- [ ] Preserve stable IDs across title/name edits.
-- [ ] Return typed results for operations that can fail instead of throwing for
+- [x] Ensure a newly created collection has one starter section.
+- [x] Implement section creation, rename, reorder, and remove operations.
+- [x] Implement item creation, update, move, reorder, and remove operations.
+- [x] Preserve stable IDs across title/name edits.
+- [x] Return typed results for operations that can fail instead of throwing for
       expected domain errors.
-- [ ] Keep collection operations pure and independent from React, server, CLI,
+- [x] Keep collection operations pure and independent from React, server, CLI,
       filesystem, and image processing.
 
 ## Milestone 6: Core Slug, Link, And Path Planning

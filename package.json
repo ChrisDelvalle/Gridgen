@@ -21,7 +21,7 @@
     "deadcode": "knip",
     "test": "bun test --pass-with-no-tests",
     "test:flake": "bun run scripts/check-flaky-tests.ts",
-    "coverage": "bun test --coverage --pass-with-no-tests",
+    "coverage": "bun test --coverage --coverage-reporter=text --coverage-reporter=lcov --pass-with-no-tests",
     "build": "bun --filter @gridgen/web build",
     "build:web": "bun --filter @gridgen/web build",
     "audit": "bun audit",

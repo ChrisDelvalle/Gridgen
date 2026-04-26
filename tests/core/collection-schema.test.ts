@@ -8,9 +8,11 @@ import {
   parseDraftLink,
   parseGridLink,
   parseImageCrop,
+  parseItemId,
   parseRenderableCollection,
   parseSafeFileName,
   parseSafeLocalLink,
+  parseSectionId,
   parseSlug,
   type Result,
   toRenderableCollection
@@ -55,6 +57,20 @@ describe("collection schema parsing", () => {
     expect(renderable.sections[0]?.items[0]?.description).toBeUndefined();
   });
 
+  test("preserves non-empty descriptions and omits missing ones", () => {
+    const withDescription = unwrapOk(parseRenderableCollection(validCollectionInput()));
+    const withoutDescription = unwrapOk(
+      parseRenderableCollection(
+        validCollectionInput({
+          description: null
+        })
+      )
+    );
+
+    expect(withDescription.sections[0]?.items[0]?.description?.value).toBe("Optional short text.");
+    expect(withoutDescription.sections[0]?.items[0]?.description).toBeUndefined();
+  });
+
   test("rejects unsupported schema versions", () => {
     const error = unwrapErr(
       parseDraftCollection({
@@ -77,6 +93,17 @@ describe("collection schema parsing", () => {
 
     expect(error.code).toBe(GridgenErrorCode.CollectionInvalidJson);
     expect(error.context.fieldPath).toBe("sections");
+  });
+
+  test("rejects collections without a schema version", () => {
+    const error = unwrapErr(
+      parseDraftCollection({
+        id: "music",
+        title: "Music"
+      })
+    );
+
+    expect(error.code).toBe(GridgenErrorCode.CollectionInvalidJson);
   });
 
   test("rejects duplicate section IDs", () => {
@@ -112,17 +139,135 @@ describe("collection schema parsing", () => {
     expect(error.code).toBe(GridgenErrorCode.CollectionDuplicateId);
     expect(error.context.itemId).toBe("album-a");
   });
+
+  test("rejects invalid nested identifiers and asset references", () => {
+    const baseInput = validCollectionInput();
+    const baseSection = firstSectionInput(baseInput);
+    const baseItem = firstItemInput(baseInput);
+    const baseImage = firstItemImage(baseInput);
+    const sectionIdError = unwrapErr(
+      parseDraftCollection({
+        ...baseInput,
+        sections: [
+          {
+            ...baseSection,
+            id: "Bad Section"
+          }
+        ]
+      })
+    );
+    const itemIdError = unwrapErr(
+      parseDraftCollection({
+        ...baseInput,
+        sections: [
+          {
+            ...baseSection,
+            items: [
+              {
+                ...baseItem,
+                id: "Bad Item"
+              }
+            ]
+          }
+        ]
+      })
+    );
+    const fileNameError = unwrapErr(
+      parseDraftCollection({
+        ...baseInput,
+        sections: [
+          {
+            ...baseSection,
+            items: [
+              {
+                ...baseItem,
+                image: {
+                  ...baseImage,
+                  sourceFileName: "../cover.jpg"
+                }
+              }
+            ]
+          }
+        ]
+      })
+    );
+
+    expect(sectionIdError.code).toBe(GridgenErrorCode.PathUnsafe);
+    expect(itemIdError.code).toBe(GridgenErrorCode.PathUnsafe);
+    expect(fileNameError.code).toBe(GridgenErrorCode.PathUnsafe);
+  });
+
+  test("rejects invalid collection identifiers, item links, and image crops", () => {
+    const baseInput = validCollectionInput();
+    const baseSection = firstSectionInput(baseInput);
+    const baseItem = firstItemInput(baseInput);
+    const collectionIdError = unwrapErr(
+      parseDraftCollection({
+        ...baseInput,
+        id: "Bad Collection"
+      })
+    );
+    const linkError = unwrapErr(
+      parseDraftCollection({
+        ...baseInput,
+        sections: [
+          {
+            ...baseSection,
+            items: [
+              {
+                ...baseItem,
+                link: "//example.com/unsafe"
+              }
+            ]
+          }
+        ]
+      })
+    );
+    const cropError = unwrapErr(
+      parseDraftCollection({
+        ...baseInput,
+        sections: [
+          {
+            ...baseSection,
+            items: [
+              {
+                ...baseItem,
+                image: {
+                  ...firstItemImage(baseInput),
+                  crop: {
+                    height: 100,
+                    unit: "percent",
+                    width: 90,
+                    x: 20,
+                    y: 0
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      })
+    );
+
+    expect(collectionIdError.code).toBe(GridgenErrorCode.PathUnsafe);
+    expect(linkError.code).toBe(GridgenErrorCode.ItemInvalidLink);
+    expect(cropError.code).toBe(GridgenErrorCode.AssetInvalidCrop);
+  });
 });
 
 describe("domain value parsing", () => {
   test("accepts safe identifiers and file names", () => {
     expect(unwrapOk(parseCollectionId("music")).value).toBe("music");
+    expect(unwrapOk(parseSectionId("s-tier")).value).toBe("s-tier");
+    expect(unwrapOk(parseItemId("album-a")).value).toBe("album-a");
     expect(unwrapOk(parseSlug("album-a")).value).toBe("album-a");
     expect(unwrapOk(parseSafeFileName("cover_v1.jpg")).value).toBe("cover_v1.jpg");
   });
 
   test("rejects unsafe identifiers and file names", () => {
     expect(unwrapErr(parseCollectionId("Music")).code).toBe(GridgenErrorCode.PathUnsafe);
+    expect(unwrapErr(parseSectionId("Bad Section")).code).toBe(GridgenErrorCode.PathUnsafe);
+    expect(unwrapErr(parseItemId("Bad Item")).code).toBe(GridgenErrorCode.PathUnsafe);
     expect(unwrapErr(parseSlug("album--a")).code).toBe(GridgenErrorCode.PathUnsafe);
     expect(unwrapErr(parseSafeFileName("../cover.jpg")).code).toBe(GridgenErrorCode.PathUnsafe);
   });
@@ -140,7 +285,11 @@ describe("domain value parsing", () => {
 
     expect(unwrapErr(parseGridLink(scriptUrl)).code).toBe(GridgenErrorCode.ItemInvalidLink);
     expect(unwrapErr(parseGridLink("//example.com/a")).code).toBe(GridgenErrorCode.ItemInvalidLink);
+    expect(unwrapErr(parseGridLink("/../private")).code).toBe(GridgenErrorCode.ItemInvalidLink);
     expect(unwrapErr(parseSafeLocalLink("/../private")).code).toBe(
+      GridgenErrorCode.ItemInvalidLink
+    );
+    expect(unwrapErr(parseSafeLocalLink("notes\\private")).code).toBe(
       GridgenErrorCode.ItemInvalidLink
     );
   });
@@ -228,10 +377,21 @@ describe("renderable validation", () => {
 
     expect(unwrapErr(toRenderableCollection(draft)).code).toBe(GridgenErrorCode.ItemMissingImage);
   });
+
+  test("returns draft parse failures from parseRenderableCollection", () => {
+    const error = unwrapErr(
+      parseRenderableCollection({
+        ...validCollectionInput(),
+        sections: "invalid"
+      })
+    );
+
+    expect(error.code).toBe(GridgenErrorCode.CollectionInvalidJson);
+  });
 });
 
 interface ValidInputOverrides {
-  readonly description?: string;
+  readonly description?: string | null;
   readonly link?: string;
   readonly title?: string;
 }
@@ -271,6 +431,14 @@ interface ValidImageInput {
 }
 
 function validCollectionInput(overrides: ValidInputOverrides = {}): ValidCollectionInput {
+  let description: { description?: string } = { description: "Optional short text." };
+
+  if (overrides.description === null) {
+    description = {};
+  } else if (overrides.description !== undefined) {
+    description = { description: overrides.description };
+  }
+
   return {
     id: "music",
     schemaVersion: 1,
@@ -279,7 +447,7 @@ function validCollectionInput(overrides: ValidInputOverrides = {}): ValidCollect
         id: "s-tier",
         items: [
           {
-            description: overrides.description ?? "Optional short text.",
+            ...description,
             id: "album-a",
             image: {
               alt: "Album A cover",
@@ -338,4 +506,14 @@ function firstItemInput(input: ValidCollectionInput): ValidItemInput {
   }
 
   return item;
+}
+
+function firstItemImage(input: ValidCollectionInput): ValidImageInput {
+  const image = firstItemInput(input).image;
+
+  if (image === undefined) {
+    throw new Error("Expected first item image.");
+  }
+
+  return image;
 }
