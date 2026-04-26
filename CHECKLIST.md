@@ -137,75 +137,75 @@ for implementation work and definitions of done.
 
 ## Milestone 9: IO Workspace And Atomic Writers
 
-- [ ] Add `@gridgen/io` workspace dependency on `@gridgen/core`.
-- [ ] Implement source workspace discovery for `collections/*.json`.
-- [ ] Ensure collection scans ignore `.trash/`.
-- [ ] Implement collection JSON read and parse handoff to `core`.
-- [ ] Implement atomic collection JSON writes through temporary files and rename.
-- [ ] Implement source image storage under `assets/<collection-id>/sources/`.
-- [ ] Implement authoring soft delete by moving collection JSON and collection
+- [x] Add `@gridgen/io` workspace dependency on `@gridgen/core`.
+- [x] Implement source workspace discovery for `collections/*.json`.
+- [x] Ensure collection scans ignore `.trash/`.
+- [x] Implement collection JSON read and parse handoff to `core`.
+- [x] Implement atomic collection JSON writes through temporary files and rename.
+- [x] Implement source image storage under `assets/<collection-id>/sources/`.
+- [x] Implement authoring soft delete by moving collection JSON and collection
       assets into `.trash/<timestamp>-<collection-id>/`.
-- [ ] Implement generated Jekyll text output writes through temporary files and
+- [x] Implement generated Jekyll text output writes through temporary files and
       rename.
-- [ ] Implement generated asset directory writes only inside Gridgen-owned
+- [x] Implement generated asset directory writes only inside Gridgen-owned
       output directories.
-- [ ] Prevent writes outside selected source workspace and selected Jekyll root.
-- [ ] Report touched or possibly touched files when an edge write fails partway
+- [x] Prevent writes outside selected source workspace and selected Jekyll root.
+- [x] Report touched or possibly touched files when an edge write fails partway
       through.
 
 ## Milestone 10: CLI Validate
 
-- [ ] Add `commander` to `@gridgen/cli` when CLI command implementation begins.
-- [ ] Implement `gridgen validate <source-file-or-dir>`.
-- [ ] Validate a single collection JSON file when the source is a file.
-- [ ] Validate every collection in `collections/` when the source is a source
+- [x] Add `commander` to `@gridgen/cli` when CLI command implementation begins.
+- [x] Implement `gridgen validate <source-file-or-dir>`.
+- [x] Validate a single collection JSON file when the source is a file.
+- [x] Validate every collection in `collections/` when the source is a source
       workspace directory.
-- [ ] Validate source asset references without writing output.
-- [ ] Print actionable validation errors with collection/item/field context.
-- [ ] Return a non-zero exit code for invalid collections or unsafe paths.
-- [ ] Keep validation behavior wired through `core` and `io`, not duplicated in
+- [x] Validate source asset references without writing output.
+- [x] Print actionable validation errors with collection/item/field context.
+- [x] Return a non-zero exit code for invalid collections or unsafe paths.
+- [x] Keep validation behavior wired through `core` and `io`, not duplicated in
       command modules.
 
 ## Milestone 11: CLI Build Without Image Processing
 
-- [ ] Implement `gridgen build <source-file-or-dir> <jekyll-site>` for
+- [x] Implement `gridgen build <source-file-or-dir> <jekyll-site>` for
       collections that already reference existing generated image names or
       placeholder planned assets.
-- [ ] Build one collection when the source is a collection file.
-- [ ] Build all collections under `collections/` when the source is a source
+- [x] Build one collection when the source is a collection file.
+- [x] Build all collections under `collections/` when the source is a source
       workspace directory.
-- [ ] Write `_includes/gridgen/<collection-id>.html`.
-- [ ] Write `assets/gridgen/gridgen.css`.
-- [ ] Refuse unsafe output paths before writing any output.
-- [ ] Overwrite only inside `_includes/gridgen/` and `assets/gridgen/`.
-- [ ] Print a concise summary of generated include and CSS files.
-- [ ] Keep build command orchestration thin; render and path decisions come from
+- [x] Write `_includes/gridgen/<collection-id>.html`.
+- [x] Write `assets/gridgen/gridgen.css`.
+- [x] Refuse unsafe output paths before writing any output.
+- [x] Overwrite only inside `_includes/gridgen/` and `assets/gridgen/`.
+- [x] Print a concise summary of generated include and CSS files.
+- [x] Keep build command orchestration thin; render and path decisions come from
       `core`.
 
 ## Milestone 12: Image Asset Processing
 
-- [ ] Add `sharp` to `@gridgen/io` when image processing implementation begins.
-- [ ] Add the 20 MB upload limit as an exported constant.
-- [ ] Read source image metadata through the IO image boundary.
-- [ ] Convert percentage crop metadata to pixel crop regions safely.
-- [ ] Generate 512 by 512 WebP thumbnails.
-- [ ] Use cover/crop behavior by default.
-- [ ] Reject unsupported raster inputs with structured errors.
-- [ ] Reject invalid crop metadata with structured errors.
-- [ ] Reject oversized uploads before image processing.
-- [ ] Write generated WebP files under `assets/gridgen/<collection-id>/`.
-- [ ] Keep browser canvas output out of the persisted source-of-truth pipeline.
+- [x] Add `sharp` to `@gridgen/io` when image processing implementation begins.
+- [x] Add the 20 MB upload limit as an exported constant.
+- [x] Read source image metadata through the IO image boundary.
+- [x] Convert percentage crop metadata to pixel crop regions safely.
+- [x] Generate 512 by 512 WebP thumbnails.
+- [x] Use cover/crop behavior by default.
+- [x] Reject unsupported raster inputs with structured errors.
+- [x] Reject invalid crop metadata with structured errors.
+- [x] Reject oversized uploads before image processing.
+- [x] Write generated WebP files under `assets/gridgen/<collection-id>/`.
+- [x] Keep browser canvas output out of the persisted source-of-truth pipeline.
 
 ## Milestone 13: CLI Build With Image Processing
 
-- [ ] Integrate image processing into `gridgen build`.
-- [ ] Validate source images before writing generated output.
-- [ ] Generate missing or stale WebP assets from source images and crop metadata.
-- [ ] Remove stale generated files only inside the collection's
+- [x] Integrate image processing into `gridgen build`.
+- [x] Validate source images before writing generated output.
+- [x] Generate missing or stale WebP assets from source images and crop metadata.
+- [x] Remove stale generated files only inside the collection's
       `assets/gridgen/<collection-id>/` output directory.
-- [ ] Keep generated output stable across repeated builds with unchanged input.
-- [ ] Report generated image files in the build summary.
-- [ ] Ensure one failed image does not produce a misleading successful build.
+- [x] Keep generated output stable across repeated builds with unchanged input.
+- [x] Report generated image files in the build summary.
+- [x] Ensure one failed image does not produce a misleading successful build.
 
 ## Milestone 14: Local Server Foundation
 

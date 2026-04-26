@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@gridgen/core": "workspace:*",
+    "sharp": "^0.34.5"
+  },
   "exports": {
     ".": "./src/index.ts"
   }

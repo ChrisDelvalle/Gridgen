@@ -3,8 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@gridgen/core": "workspace:*",
+    "@gridgen/io": "workspace:*",
+    "commander": "^14.0.2"
+  },
   "bin": {
-    "gridgen": "./src/index.ts"
+    "gridgen": "./src/bin.ts"
   },
   "exports": {
     ".": "./src/index.ts"
