@@ -1,0 +1,73 @@
+{
+  "id": "music",
+  "schemaVersion": 1,
+  "sections": [
+    {
+      "id": "s-tier",
+      "items": [
+        {
+          "description": "Focused, immediate, and easy to recommend.",
+          "id": "album-a",
+          "image": {
+            "alt": "Album A cover",
+            "crop": {
+              "height": 100,
+              "unit": "percent",
+              "width": 100,
+              "x": 0,
+              "y": 0
+            },
+            "sourceFileName": "album-a.png",
+            "type": "file"
+          },
+          "link": "https://example.com/album-a",
+          "title": "Album A"
+        },
+        {
+          "description": "A dependable starting point for the style.",
+          "id": "album-b",
+          "image": {
+            "alt": "Album B cover",
+            "crop": {
+              "height": 90,
+              "unit": "percent",
+              "width": 90,
+              "x": 5,
+              "y": 5
+            },
+            "sourceFileName": "album-b.png",
+            "type": "file"
+          },
+          "link": "https://example.com/album-b",
+          "title": "Album B"
+        }
+      ],
+      "name": "S Tier"
+    },
+    {
+      "id": "a-tier",
+      "items": [
+        {
+          "description": "Worth including for comparison and range.",
+          "id": "album-c",
+          "image": {
+            "alt": "Album C cover",
+            "crop": {
+              "height": 100,
+              "unit": "percent",
+              "width": 100,
+              "x": 0,
+              "y": 0
+            },
+            "sourceFileName": "album-c.png",
+            "type": "file"
+          },
+          "link": "https://example.com/album-c",
+          "title": "Album C"
+        }
+      ],
+      "name": "A Tier"
+    }
+  ],
+  "title": "Music"
+}

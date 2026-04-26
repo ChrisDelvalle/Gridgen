@@ -76,14 +76,16 @@ export type {
   UpdateItemOperation
 } from "./collection/operations";
 export {
-  parseDraftLink,
-  parseGridLink,
-  parseAbsolutePath,
   normalizeSafeFileName,
   normalizeSlug,
+  parseDraftLink,
+  parseGridLink,
   parseSafeFileName,
   parseSafeLocalLink,
-  parseSlug,
+  parseSlug
+} from "./paths/browser-paths";
+export {
+  parseAbsolutePath,
   planChildPath,
   planJekyllOutputPaths,
   planSourceWorkspacePaths

@@ -276,99 +276,99 @@ for implementation work and definitions of done.
 
 ## Milestone 19: Web UI Foundation And shadcn
 
-- [ ] Install shadcn/ui and only the primitives needed for the active UI
+- [x] Install shadcn/ui and only the primitives needed for the active UI
       milestone.
-- [ ] Establish the app shell with a top bar and main editor area.
-- [ ] Replace Vite starter UI with Gridgen-specific UI.
-- [ ] Add a client API layer that talks to server routes using browser-safe DTOs
+- [x] Establish the app shell with a top bar and main editor area.
+- [x] Replace Vite starter UI with Gridgen-specific UI.
+- [x] Add a client API layer that talks to server routes using browser-safe DTOs
       from `@gridgen/core`.
-- [ ] Add empty state for first local run with a clear create-collection action.
-- [ ] Add saved/dirty status state.
-- [ ] Use shadcn primitives for generic controls instead of handcrafted
+- [x] Add empty state for first local run with a clear create-collection action.
+- [x] Add saved/dirty status state.
+- [x] Use shadcn primitives for generic controls instead of handcrafted
       equivalents.
-- [ ] Keep the UI free of direct filesystem, server-package, IO-package, and
+- [x] Keep the UI free of direct filesystem, server-package, IO-package, and
       renderer imports.
 
 ## Milestone 20: Web Collection Editor
 
-- [ ] Implement collection title editing in the top bar.
-- [ ] Implement inline section title editing.
-- [ ] Render sections as the main editor structure.
-- [ ] Render item tiles in a responsive CSS Grid.
-- [ ] Add an add-section button.
-- [ ] Add an add-item placeholder tile inside each section.
-- [ ] Open an item editor in a right-side shadcn `Sheet`.
-- [ ] Support item title, description, link, alt text, and remove action in the
+- [x] Implement collection title editing in the top bar.
+- [x] Implement inline section title editing.
+- [x] Render sections as the main editor structure.
+- [x] Render item tiles in a responsive CSS Grid.
+- [x] Add an add-section button.
+- [x] Add an add-item placeholder tile inside each section.
+- [x] Open an item editor in a right-side shadcn `Sheet`.
+- [x] Support item title, description, link, alt text, and remove action in the
       item editor.
-- [ ] Show field-level validation feedback from server/core validation errors.
-- [ ] Keep draft state separate from persisted collection types where UI
+- [x] Show field-level validation feedback from server/core validation errors.
+- [x] Keep draft state separate from persisted collection types where UI
       convenience requires it.
 
 ## Milestone 21: Web Save And Preview
 
-- [ ] Implement explicit Save action.
-- [ ] Treat the saved server response as the post-save source of truth.
-- [ ] Show non-noisy unsaved-change state.
-- [ ] Implement Preview action.
-- [ ] Surface renderable validation errors before or during preview.
-- [ ] Open preview as a full preview route.
-- [ ] Ensure preview uses the server/core renderer path, not React rendering.
-- [ ] Keep version 1 UI focused on save and preview, without direct Jekyll build
+- [x] Implement explicit Save action.
+- [x] Treat the saved server response as the post-save source of truth.
+- [x] Show non-noisy unsaved-change state.
+- [x] Implement Preview action.
+- [x] Surface renderable validation errors before or during preview.
+- [x] Open preview as a full preview route.
+- [x] Ensure preview uses the server/core renderer path, not React rendering.
+- [x] Keep version 1 UI focused on save and preview, without direct Jekyll build
       controls.
 
 ## Milestone 22: Web Image Upload
 
-- [ ] Add image upload control to the item editor.
-- [ ] Send image uploads to the server asset API.
-- [ ] Display returned image previews in item tiles and the item editor.
-- [ ] Store returned image references in draft item state.
-- [ ] Show upload errors for oversized, unsupported, or unsafe files.
-- [ ] Preserve source image references so future crop edits do not require a new
+- [x] Add image upload control to the item editor.
+- [x] Send image uploads to the server asset API.
+- [x] Display returned image previews in item tiles and the item editor.
+- [x] Store returned image references in draft item state.
+- [x] Show upload errors for oversized, unsupported, or unsafe files.
+- [x] Preserve source image references so future crop edits do not require a new
       upload.
 
 ## Milestone 23: Web Crop Editor
 
-- [ ] Add `react-easy-crop` to `@gridgen/web` when crop UI implementation
+- [x] Add `react-easy-crop` to `@gridgen/web` when crop UI implementation
       begins.
-- [ ] Add shadcn `Dialog` or `Sheet` for the crop editor surface.
-- [ ] Add shadcn `Slider` for zoom.
-- [ ] Use a square crop frame with `aspect={1}`.
-- [ ] Persist crop intent as percentage metadata.
-- [ ] Update tile/editor preview after crop confirmation.
-- [ ] Do not expose rotation controls in version 1.
-- [ ] Keep final persisted/generated image output server-driven through
+- [x] Add shadcn `Dialog` or `Sheet` for the crop editor surface.
+- [x] Add shadcn `Slider` for zoom.
+- [x] Use a square crop frame with `aspect={1}`.
+- [x] Persist crop intent as percentage metadata.
+- [x] Update tile/editor preview after crop confirmation.
+- [x] Do not expose rotation controls in version 1.
+- [x] Keep final persisted/generated image output server-driven through
       `@gridgen/io`.
 
 ## Milestone 24: Reordering
 
-- [ ] Add `dnd-kit` to `@gridgen/web` when reorder implementation begins.
-- [ ] Implement item reordering within a section.
-- [ ] Implement moving items between sections.
-- [ ] Implement section reordering.
-- [ ] Preserve stable IDs during all reorder operations.
-- [ ] Route reorder state changes through core collection operations.
-- [ ] Provide non-drag reorder controls where practical for accessibility and
+- [x] Add `dnd-kit` to `@gridgen/web` when reorder implementation begins.
+- [x] Implement item reordering within a section.
+- [x] Implement moving items between sections.
+- [x] Implement section reordering.
+- [x] Preserve stable IDs during all reorder operations.
+- [x] Route reorder state changes through core collection operations.
+- [x] Provide non-drag reorder controls where practical for accessibility and
       testability.
-- [ ] Ensure reorder behavior updates saved JSON order deterministically.
+- [x] Ensure reorder behavior updates saved JSON order deterministically.
 
 ## Milestone 25: Example Fixtures And Developer Onboarding
 
-- [ ] Add an example source workspace under `examples/sample-grid/`.
-- [ ] Include at least one sample collection with multiple sections and items.
-- [ ] Include small sample source images suitable for local builds.
-- [ ] Add an example Jekyll target structure under `examples/jekyll-site/`.
-- [ ] Document the shortest local workflow in the README:
+- [x] Add an example source workspace under `examples/sample-grid/`.
+- [x] Include at least one sample collection with multiple sections and items.
+- [x] Include small sample source images suitable for local builds.
+- [x] Add an example Jekyll target structure under `examples/jekyll-site/`.
+- [x] Document the shortest local workflow in the README:
       `gridgen run`, save, `gridgen build`, and Jekyll include usage.
-- [ ] Document the source workspace structure and generated output structure.
-- [ ] Document the dependency policy so contributors know to add dependencies
+- [x] Document the source workspace structure and generated output structure.
+- [x] Document the dependency policy so contributors know to add dependencies
       only in the milestone that uses them.
 
 ## Milestone 26: End-To-End Authoring Flow
 
-- [ ] Add Playwright when the local server and editor are ready for E2E coverage.
-- [ ] Cover first local run and create-collection journey.
-- [ ] Cover create, edit, upload, save, and preview journey.
-- [ ] Cover crop adjustment journey without rotation.
-- [ ] Cover CLI build output from an authored source workspace.
-- [ ] Ensure E2E coverage asserts user-visible behavior and generated output,
+- [x] Add Playwright when the local server and editor are ready for E2E coverage.
+- [x] Cover first local run and create-collection journey.
+- [x] Cover create, edit, upload, save, and preview journey.
+- [x] Cover crop adjustment journey without rotation.
+- [x] Cover CLI build output from an authored source workspace.
+- [x] Ensure E2E coverage asserts user-visible behavior and generated output,
       not implementation details.

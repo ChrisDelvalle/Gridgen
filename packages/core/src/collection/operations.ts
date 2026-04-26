@@ -4,7 +4,7 @@ import {
   type GridgenError,
   GridgenErrorCode
 } from "../errors/errors";
-import { normalizeSlug } from "../paths/path-planning";
+import { normalizeSlug } from "../paths/browser-paths";
 import { err, ok, type Result } from "../result/result";
 import type {
   CollectionId,

@@ -22,7 +22,7 @@ import {
   type GridgenError,
   GridgenErrorCode
 } from "../errors/errors";
-import { parseDraftLink, parseSafeFileName, parseSlug } from "../paths/path-planning";
+import { parseDraftLink, parseSafeFileName, parseSlug } from "../paths/browser-paths";
 import { err, ok, type Result } from "../result/result";
 
 const currentSchemaVersion = 1;

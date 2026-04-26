@@ -280,6 +280,47 @@ export function registerGridgenRoutes(app: Hono, input: RegisterGridgenRoutesInp
     );
   });
 
+  app.get("/api/collections/:collectionId/assets/:sourceFileName/preview.webp", async (context) => {
+    const collectionId = parseRouteCollectionId(context);
+
+    if (!collectionId.ok) {
+      return jsonError(context, collectionId.error, 400);
+    }
+
+    const sourceFileName = normalizeSafeFileName(
+      context.req.param("sourceFileName"),
+      "sourceFileName"
+    );
+
+    if (!sourceFileName.ok) {
+      return jsonError(context, sourceFileName.error, 400);
+    }
+
+    const image = await createPreviewImage({
+      collectionId: collectionId.value,
+      crop: {
+        height: 100,
+        unit: "percent",
+        width: 100,
+        x: 0,
+        y: 0
+      },
+      sourceFileName: sourceFileName.value,
+      workspaceRoot: input.sourceWorkspaceRoot
+    });
+
+    if (!image.ok) {
+      return jsonError(context, image.error, 400);
+    }
+
+    return new Response(new Uint8Array(image.value), {
+      headers: {
+        "content-type": "image/webp"
+      },
+      status: 200
+    });
+  });
+
   app.get("/preview/gridgen.css", (context) =>
     context.body(renderGridCss(), 200, {
       "content-type": "text/css; charset=utf-8"

@@ -1,3 +1,6 @@
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import {
   createServerError,
   err,
@@ -16,6 +19,8 @@ const mutatingMethods = new Set(["DELETE", "PATCH", "POST", "PUT"]);
 const jsonContentTypePrefix = "application/json";
 const multipartContentTypePrefix = "multipart/form-data";
 const sessionTokenHeaderName = "x-gridgen-session-token";
+const serverDirectory = dirname(fileURLToPath(import.meta.url));
+const webDistDirectory = join(serverDirectory, "../../../apps/web/dist");
 
 /**
  * Default JSON request body limit for local API requests.
@@ -252,12 +257,56 @@ export function createGridgenServerApp(input: CreateGridgenServerAppInput = {}):
   registerGridgenRoutes(app, {
     sourceWorkspaceRoot
   });
+  registerWebAppRoutes(app);
 
   return {
     allowedOrigins,
     app,
     sessionToken
   };
+}
+
+function registerWebAppRoutes(app: Hono): void {
+  app.get("/", async () => serveWebDistFile("index.html"));
+  app.get("/favicon.svg", async () => serveWebDistFile("favicon.svg"));
+  app.get("/assets/:assetName", async (context) =>
+    serveWebDistFile(`assets/${context.req.param("assetName")}`)
+  );
+}
+
+async function serveWebDistFile(relativePath: string): Promise<Response> {
+  if (relativePath.includes("..")) {
+    return new Response("Not found.", { status: 404 });
+  }
+
+  const file = Bun.file(join(webDistDirectory, relativePath));
+
+  if (!(await file.exists())) {
+    return new Response("Gridgen web assets have not been built.", { status: 404 });
+  }
+
+  return new Response(file, {
+    headers: {
+      "content-type": selectStaticContentType(relativePath)
+    },
+    status: 200
+  });
+}
+
+function selectStaticContentType(relativePath: string): string {
+  if (relativePath.endsWith(".css")) {
+    return "text/css; charset=utf-8";
+  }
+
+  if (relativePath.endsWith(".js")) {
+    return "text/javascript; charset=utf-8";
+  }
+
+  if (relativePath.endsWith(".svg")) {
+    return "image/svg+xml";
+  }
+
+  return "text/html; charset=utf-8";
 }
 
 /**

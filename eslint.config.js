@@ -445,7 +445,7 @@ export default tseslint.config(
     }
   },
   {
-    files: ["apps/web/vite.config.ts"],
+    files: ["apps/web/vite.config.ts", "playwright.config.ts"],
     rules: {
       "no-restricted-syntax": "off"
     }

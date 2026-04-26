@@ -4,6 +4,10 @@
   --bg: #f7f8f5;
   --border: #d7dcd1;
   --control: #ffffff;
+  --danger: #b23b3b;
+  --danger-border: #e3adad;
+  --danger-surface: #fff1f1;
+  --danger-text: #8b2424;
   --empty-placeholder: #edf1eb;
   --focus: #d07f4f;
   --hover-border: #7d948a;
@@ -16,6 +20,7 @@
   --sidebar: #fbfbf7;
   --surface: #f7f8f5;
   --text: #18201c;
+  --warning-text: #87510f;
   --sans: system-ui, "Segoe UI", Roboto, sans-serif;
 
   font: 16px/145% var(--sans);
@@ -36,6 +41,10 @@
     --bg: #121713;
     --border: #354137;
     --control: #1b211d;
+    --danger: #d96b6b;
+    --danger-border: #743d3d;
+    --danger-surface: #2b1d1d;
+    --danger-text: #f2b8b8;
     --empty-placeholder: #232b24;
     --focus: #d7a06f;
     --hover-border: #728579;
@@ -48,6 +57,7 @@
     --sidebar: #151b17;
     --surface: #121713;
     --text: #edf1ea;
+    --warning-text: #e6b574;
   }
 }
 

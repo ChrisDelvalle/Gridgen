@@ -485,6 +485,50 @@ describe("server collection and preview routes", () => {
         .subarray(0, 4)
         .toString("utf8")
     ).toBe("RIFF");
+
+    const sourcePreviewResponse = await server.app.request(
+      "http://127.0.0.1/api/collections/music/assets/album-a.png/preview.webp"
+    );
+
+    expect(sourcePreviewResponse.status).toBe(200);
+    expect(sourcePreviewResponse.headers.get("content-type")).toBe("image/webp");
+  });
+
+  test("serves built web UI assets from the local server", async () => {
+    const workspaceRoot = await makeWorkspace();
+    const server = createGridgenServerApp({
+      sourceWorkspaceRoot: workspaceRoot
+    });
+    const rootResponse = await server.app.request("http://127.0.0.1/");
+    const cssAssetName = await findBuiltAsset(".css");
+    const jsAssetName = await findBuiltAsset(".js");
+
+    expect(rootResponse.status).toBe(200);
+    expect(rootResponse.headers.get("content-type")).toBe("text/html; charset=utf-8");
+    expect(await rootResponse.text()).toContain("Gridgen");
+
+    const cssResponse = await server.app.request(`http://127.0.0.1/assets/${cssAssetName}`);
+
+    expect(cssResponse.status).toBe(200);
+    expect(cssResponse.headers.get("content-type")).toBe("text/css; charset=utf-8");
+
+    const jsResponse = await server.app.request(`http://127.0.0.1/assets/${jsAssetName}`);
+
+    expect(jsResponse.status).toBe(200);
+    expect(jsResponse.headers.get("content-type")).toBe("text/javascript; charset=utf-8");
+
+    const faviconResponse = await server.app.request("http://127.0.0.1/favicon.svg");
+
+    expect(faviconResponse.status).toBe(200);
+    expect(faviconResponse.headers.get("content-type")).toBe("image/svg+xml");
+
+    const missingAssetResponse = await server.app.request("http://127.0.0.1/assets/missing.svg");
+
+    expect(missingAssetResponse.status).toBe(404);
+
+    const unsafeResponse = await server.app.request("http://127.0.0.1/assets/..%2Findex.html");
+
+    expect(unsafeResponse.status).toBe(404);
   });
 
   test("reports preview failures through full-route responses", async () => {
@@ -545,6 +589,13 @@ describe("server collection and preview routes", () => {
       400,
       "asset.unsupportedType"
     );
+    await expectJsonError(
+      await server.app.request(
+        "http://127.0.0.1/api/collections/music/assets/album-a.png/preview.webp"
+      ),
+      400,
+      "asset.unsupportedType"
+    );
 
     const invalidCollection = unwrapOk(createCollectionDraft({ title: "Music" }));
 
@@ -557,6 +608,21 @@ describe("server collection and preview routes", () => {
       await server.app.request("http://127.0.0.1/preview/music/assets/album-a.webp"),
       400,
       "collection.emptyTitle"
+    );
+
+    await expectJsonError(
+      await server.app.request(
+        "http://127.0.0.1/api/collections/Bad/assets/album-a.png/preview.webp"
+      ),
+      400,
+      "path.unsafe"
+    );
+    await expectJsonError(
+      await server.app.request(
+        "http://127.0.0.1/api/collections/music/assets/%5Ccover.png/preview.webp"
+      ),
+      400,
+      "path.unsafe"
     );
   });
 });
@@ -658,6 +724,19 @@ async function expectJsonError(response: Response, status: number, code: string)
   expect(await response.json()).toMatchObject({
     error: { code }
   });
+}
+
+async function findBuiltAsset(extension: string): Promise<string> {
+  const assetDirectory = path.join(process.cwd(), "apps", "web", "dist", "assets");
+  const assetName = (await fs.readdir(assetDirectory)).find((fileName) =>
+    fileName.endsWith(extension)
+  );
+
+  if (assetName === undefined) {
+    throw new Error(`Expected built web asset with extension: ${extension}`);
+  }
+
+  return assetName;
 }
 
 function createPng(): Uint8Array {
