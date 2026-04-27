@@ -43,6 +43,7 @@ export interface ApiFailure {
  *
  * @property bootstrap Fetches active workspace and security context.
  * @property createCollection Creates a collection.
+ * @property deleteCollection Soft-deletes a collection.
  * @property getCollection Fetches a collection snapshot.
  * @property listCollections Lists collection summaries.
  * @property saveCollection Persists a draft collection.
@@ -55,6 +56,10 @@ interface GridgenApiClient {
     title: string,
     sessionToken: string
   ) => Promise<CollectionResponseDto>;
+  readonly deleteCollection: (
+    collectionId: string,
+    sessionToken: string
+  ) => Promise<{ readonly deleted: true }>;
   readonly getCollection: (collectionId: string) => Promise<CollectionResponseDto>;
   readonly listCollections: () => Promise<ListCollectionsResponseDto>;
   readonly saveCollection: (
@@ -86,6 +91,16 @@ export function createGridgenApiClient(): GridgenApiClient {
         headers: createJsonHeaders(sessionToken),
         method: "POST"
       }),
+    deleteCollection: (collectionId, sessionToken) =>
+      requestJson<{ readonly deleted: true }>(
+        `/api/collections/${encodeURIComponent(collectionId)}`,
+        {
+          headers: {
+            "x-gridgen-session-token": sessionToken
+          },
+          method: "DELETE"
+        }
+      ),
     getCollection: (collectionId) =>
       requestJson<CollectionResponseDto>(`/api/collections/${encodeURIComponent(collectionId)}`),
     listCollections: () => requestJson<ListCollectionsResponseDto>("/api/collections"),

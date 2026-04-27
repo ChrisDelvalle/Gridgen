@@ -4,6 +4,8 @@ coverage/
 dist/
 node_modules/
 release/
+test-results/
+tmp/
 *.pem
 *.zip
 
@@ -13,3 +15,5 @@ apps/web/dist/
 # Local env
 .env
 .env.*
+
+gridgen/*

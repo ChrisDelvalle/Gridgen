@@ -372,3 +372,182 @@ for implementation work and definitions of done.
 - [x] Cover CLI build output from an authored source workspace.
 - [x] Ensure E2E coverage asserts user-visible behavior and generated output,
       not implementation details.
+
+## Milestone 27: UI shadcn Foundation Refresh
+
+- [x] Initialize or repair shadcn/ui configuration in `apps/web` so
+      `bunx --bun shadcn@latest info --json -c apps/web` reports real config,
+      aliases, component paths, icon library, and global CSS location.
+- [x] Install or repair any Tailwind/global CSS prerequisites required by the
+      shadcn Vite setup without overwriting project-specific configuration
+      blindly.
+- [x] Preview shadcn-generated changes where possible and reconcile generated
+      config with the existing Bun/Vite workspace setup.
+- [x] Add the shadcn components needed by the UI redesign only when they are
+      used: `sidebar`, `button`, `input`, `textarea`, `label`, `field`,
+      `input-group`, `button-group`, `badge`, `separator`, `sheet`, `drawer`,
+      `dialog`, `alert-dialog`, `alert`, `empty`, `skeleton`, `scroll-area`,
+      `dropdown-menu`, `context-menu`, `tooltip`, `collapsible`, `resizable`,
+      `slider`, and `sonner`.
+- [x] Review every generated shadcn file after adding it and keep
+      `components/ui/*` free of Gridgen product behavior.
+- [x] Establish the shadcn semantic theme tokens used by the redesign,
+      including sidebar, canvas, inspector, border, ring, muted, destructive,
+      and primary action surfaces.
+- [x] Replace any remaining hand-rolled shadcn-like primitives with
+      CLI-managed shadcn primitives.
+- [x] Keep all styling aligned with the repo-local shadcn rules: semantic
+      colors, built-in variants first, `gap-*`, `size-*`, `truncate`, `cn()`,
+      and no manual overlay z-index.
+
+## Milestone 28: Workbench Shell And Top Bar
+
+- [x] Rebuild the app shell around `SidebarProvider`, `CollectionSidebar`,
+      `SidebarInset`, `TopBar`, `GridCanvas`, and `ItemEditorPanel`.
+- [x] Use a fixed `56px` top bar with stable height across saved, dirty,
+      saving, and error states.
+- [x] Add `SidebarTrigger` as the first top-bar control or immediately before
+      the brand group.
+- [x] Show `Gridgen` and the active collection title with an accessible edit
+      affordance.
+- [x] Keep collection title edits routed through the existing draft/core
+      operation path and preserve stable collection IDs.
+- [x] Keep `New Collection`, `Preview`, and `Save` visible on desktop.
+- [x] Collapse lower-priority top-bar actions into shadcn `DropdownMenu` on
+      narrow widths.
+- [x] Show saved/dirty/saving state without changing top-bar height or causing
+      large layout shifts.
+- [x] Keep sidebar collapsed state, inspector width, and section collapsed state
+      as UI-only preferences unless a future design explicitly adds them to the
+      persisted collection schema.
+- [x] Keep the shell free of direct filesystem, server-package, IO-package, and
+      renderer imports.
+
+## Milestone 29: Collapsible Collection Sidebar
+
+- [x] Implement `CollectionSidebar` with shadcn `Sidebar` using
+      `collapsible="icon"`.
+- [x] Configure `--sidebar-width` to `18rem` and `--sidebar-width-mobile` to
+      `20rem` through the sidebar provider or generated shadcn sidebar
+      variables.
+- [x] Use `SidebarHeader` for the collection switcher or workspace context.
+- [x] Use `SidebarContent`, `SidebarGroup`, `SidebarGroupLabel`,
+      `SidebarGroupAction`, `SidebarMenu`, `SidebarMenuItem`,
+      `SidebarMenuButton`, `SidebarMenuAction`, and `SidebarMenuBadge` for the
+      collection list.
+- [x] Use `SidebarMenuButton isActive` for the active collection.
+- [x] Add `SidebarRail` for direct desktop collapse and expand behavior.
+- [x] Preserve accessible names and tooltips for collapsed icon-rail controls.
+- [x] Use `SidebarMenuSkeleton` for collection-list loading states.
+- [x] Use shadcn mobile/off-canvas sidebar behavior on tablet and phone widths.
+- [x] Ensure long collection names truncate without changing sidebar width.
+
+## Milestone 30: Grid Canvas, Sections, And Item Cards
+
+- [x] Center the editable grid canvas in the workbench with `minmax(0, 1fr)`,
+      independent scrolling, and responsive padding using the UI design
+      constraints.
+- [x] Render sections with stable headers containing inline title editing, item
+      count badges, reorder handles, collapse controls, and overflow actions.
+- [x] Add shadcn `Collapsible` support for section bodies while keeping section
+      headers, counts, validation state, and reorder controls visible.
+- [x] Render item cards in responsive CSS Grid with a `168px` desktop target,
+      `144px` narrow minimum, square image area, stable body height, and no
+      hover-driven layout shifts.
+- [x] Render add-item tiles with the same footprint as item cards.
+- [x] Show selected item state through border or ring treatment, not color
+      alone.
+- [x] Use neutral missing-image placeholders instead of broken image UI.
+- [x] Clamp item descriptions to two lines while preserving card height.
+- [x] Add section and item `DropdownMenu` controls for secondary actions such
+      as duplicate, move, remove, and open link.
+- [x] Add mirrored `ContextMenu` behavior only for actions that are also
+      reachable through visible controls.
+- [x] Disable or omit invalid menu actions based on public draft state, such as
+      moving the first item left or opening an empty link.
+- [x] Keep all grid mutations routed through public core/browser collection
+      operations.
+
+## Milestone 31: Item Editor Panel And Image Tooling
+
+- [x] Rebuild the selected-item editor as a persistent desktop inspector with
+      default width `384px`.
+- [x] Use shadcn `ResizablePanelGroup` for the desktop canvas/editor split with
+      editor bounds from `320px` to `480px`.
+- [x] Prevent editor resizing from shrinking the canvas below a usable item-grid
+      width.
+- [x] Keep the editor body internally scrollable and keep primary footer actions
+      reachable.
+- [x] Show an `Empty` inspector state when no item is selected.
+- [x] Refactor editor fields to shadcn `FieldGroup`, `Field`, `FieldLabel`,
+      `FieldDescription`, `Input`, and `Textarea`.
+- [x] Refactor the link field to shadcn `InputGroup` with a link icon, not
+      custom absolute positioning.
+- [x] Add an image preview area that follows the same square visual rule as
+      item cards.
+- [x] Add a shadcn `ButtonGroup` for image actions: upload, crop, replace, and
+      remove.
+- [x] Keep image upload routed through the server asset API.
+- [x] Keep crop intent emitted from `react-easy-crop` as percentage metadata.
+- [x] Keep final generated image output server-driven through `@gridgen/io`.
+- [x] Use `AlertDialog` for destructive remove actions that should require
+      confirmation.
+- [x] Map server/core field errors to the nearest visible editor field.
+
+## Milestone 32: Responsive Editor Overlays
+
+- [x] Use the desktop persistent inspector only when the canvas remains usable.
+- [x] Use shadcn `Sheet` for tablet-sized item editing.
+- [x] Use shadcn `Drawer` for phone-sized item editing and crop controls.
+- [x] Ensure the sidebar uses shadcn mobile/off-canvas behavior below the
+      desktop workbench breakpoint.
+- [x] Keep the grid one column at phone width and avoid horizontal page scroll.
+- [x] Keep top-bar actions reachable on phone widths through visible controls
+      or `DropdownMenu`.
+- [x] Verify the layout acceptance matrix from `UI DESIGN.md` in implementation
+      at `1440px`, `1280px`, `1024px`, `768px`, and `390px` widths.
+- [x] Ensure dialogs, sheets, and drawers all have accessible titles and
+      intentional focus return behavior.
+
+## Milestone 33: UI Feedback, Empty, Loading, And Undo States
+
+- [x] Replace custom empty states with shadcn `Empty`.
+- [x] Replace custom loading placeholders with shadcn `Skeleton` sized to match
+      final sidebar, canvas, and editor layouts.
+- [x] Replace screen-level and panel-level failures with shadcn `Alert`.
+- [x] Keep validation errors inline with fields through `FieldDescription` and
+      `aria-invalid`.
+- [x] Add a global shadcn `sonner` toaster.
+- [x] Use `sonner` for transient success feedback such as saved, image
+      uploaded, and copied text.
+- [x] Add undoable `sonner` actions for draft-only item or section removals
+      where rollback can be represented safely in draft state.
+- [x] Implement undo through public draft operations or a typed draft-state
+      rollback path, not through private component mutation or test-only
+      exports.
+- [x] Ensure toasts are never the only place validation errors or destructive
+      consequences are communicated.
+- [x] Ensure disabled controls reflect real unavailable operations such as crop
+      without image, save while saving, and move-up for the first section.
+
+## Milestone 34: UI Visual And Behavior Coverage
+
+- [x] Add E2E coverage for collapsing and expanding the desktop sidebar.
+- [x] Add E2E coverage for opening the mobile/off-canvas sidebar behavior.
+- [x] Add E2E coverage for resizing the desktop item editor within allowed
+      bounds.
+- [x] Add E2E coverage for section collapse and expansion.
+- [x] Add E2E coverage for section and item overflow menu actions.
+- [x] Add E2E coverage for image action `ButtonGroup` controls.
+- [x] Add E2E coverage for tablet `Sheet` and phone `Drawer` editor behavior.
+- [x] Preserve existing first-run, create, edit, upload, crop, save, preview,
+      and CLI-build authoring coverage.
+- [x] Add focused public-interface tests for nontrivial browser-safe UI helpers,
+      such as field-error mapping, draft undo rollback, responsive editor-mode
+      selection, and menu-action availability.
+- [x] Add keyboard/focus behavior coverage for sidebar trigger, overflow menus,
+      item editor overlays, and destructive confirmations.
+- [x] Capture or document visual verification for desktop, collapsed-sidebar,
+      resized-inspector, tablet, and phone layouts.
+- [x] Ensure UI coverage asserts user-visible behavior and public interfaces,
+      not implementation details or test-only exports.

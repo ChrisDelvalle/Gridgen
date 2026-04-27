@@ -1,8 +1,12 @@
 Previous project/
+.agents/
+UI Design/
 apps/web/dist/
 coverage/
 dist/
 node_modules/
 release/
+test-results/
+tmp/
 *.pem
 *.zip

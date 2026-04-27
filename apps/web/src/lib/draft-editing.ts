@@ -108,6 +108,23 @@ export function removeItem(
 }
 
 /**
+ * Removes a draft section through core collection operations.
+ *
+ * @param collection Existing draft snapshot.
+ * @param sectionId Target section ID.
+ * @returns Updated draft snapshot or structured failure.
+ */
+export function removeSection(
+  collection: DraftCollectionJson,
+  sectionId: string
+): Result<DraftCollectionJson, GridgenError> {
+  return applyOperation(collection, {
+    sectionId: { value: sectionId },
+    type: CollectionOperationType.RemoveSection
+  });
+}
+
+/**
  * Updates a draft item through core collection operations.
  *
  * @param collection Existing draft snapshot.

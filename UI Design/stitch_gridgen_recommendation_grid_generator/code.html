@@ -1,0 +1,607 @@
+<!doctype html>
+
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Gridgen - Music Authoring</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary": "#ffffff",
+              "on-tertiary-container": "#8a8282",
+              "primary-fixed-dim": "#c8c6c8",
+              "on-background": "#1c1b1b",
+              "tertiary-container": "#1f1a1a",
+              "on-primary-fixed": "#1c1b1d",
+              "inverse-primary": "#c8c6c8",
+              "surface-tint": "#5f5e60",
+              secondary: "#5d5e60",
+              "surface-container-low": "#f7f3f2",
+              "error-container": "#ffdad6",
+              "tertiary-fixed-dim": "#cec4c4",
+              "secondary-fixed": "#e2e2e3",
+              "inverse-on-surface": "#f4f0ef",
+              "on-tertiary-fixed": "#1f1a1a",
+              "on-primary": "#ffffff",
+              "secondary-container": "#dfdfe0",
+              "on-surface": "#1c1b1b",
+              "secondary-fixed-dim": "#c6c6c7",
+              "surface-container-highest": "#e5e2e1",
+              "on-primary-container": "#858386",
+              background: "#fdf8f8",
+              "on-error": "#ffffff",
+              "tertiary-fixed": "#ebe0df",
+              error: "#ba1a1a",
+              "surface-variant": "#e5e2e1",
+              "on-secondary-fixed-variant": "#454748",
+              "outline-variant": "#c8c5ca",
+              tertiary: "#000000",
+              "on-secondary-fixed": "#1a1c1d",
+              "on-surface-variant": "#47464a",
+              "surface-dim": "#ddd9d9",
+              "inverse-surface": "#313030",
+              "on-secondary": "#ffffff",
+              "primary-fixed": "#e5e1e4",
+              "on-tertiary-fixed-variant": "#4c4545",
+              "on-error-container": "#93000a",
+              "primary-container": "#1c1b1d",
+              "surface-container": "#f1edec",
+              "surface-container-lowest": "#ffffff",
+              primary: "#000000",
+              "surface-bright": "#fdf8f8",
+              "surface-container-high": "#ebe7e7",
+              surface: "#fdf8f8",
+              outline: "#78767b",
+              "on-primary-fixed-variant": "#474649",
+              "on-secondary-container": "#616364"
+            },
+            borderRadius: {
+              DEFAULT: "0.125rem",
+              lg: "0.25rem",
+              xl: "0.5rem",
+              full: "0.75rem"
+            },
+            spacing: {
+              base: "4px",
+              "container-max": "1200px",
+              sm: "8px",
+              xl: "32px",
+              xs: "4px",
+              lg: "24px",
+              gutter: "16px",
+              md: "16px"
+            },
+            fontFamily: {
+              h1: ["Inter"],
+              "body-base": ["Inter"],
+              code: ["monospace"],
+              "body-sm": ["Inter"],
+              h2: ["Inter"],
+              "label-md": ["Inter"],
+              h3: ["Inter"]
+            },
+            fontSize: {
+              h1: ["30px", { lineHeight: "36px", letterSpacing: "-0.025em", fontWeight: "600" }],
+              "body-base": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+              code: ["13px", { lineHeight: "18px", fontWeight: "400" }],
+              "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+              h2: ["24px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "600" }],
+              "label-md": ["14px", { lineHeight: "20px", fontWeight: "500" }],
+              h3: ["20px", { lineHeight: "28px", letterSpacing: "-0.02em", fontWeight: "600" }]
+            }
+          }
+        }
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+        font-size: 1.25rem;
+      }
+      body {
+        font-family: "Inter", sans-serif;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-background text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed"
+  >
+    <!-- TopNavBar -->
+    <header
+      class="flex items-center justify-between w-full h-14 px-6 sticky top-0 z-50 bg-white border-b border-zinc-200"
+    >
+      <div class="flex items-center gap-4">
+        <span class="text-sm font-bold tracking-tight text-zinc-900">Gridgen</span>
+        <div class="h-4 w-[1px] bg-zinc-200"></div>
+        <div class="flex items-center gap-2 group cursor-pointer">
+          <span class="font-sans text-sm font-medium text-zinc-900">Music</span>
+          <span class="material-symbols-outlined text-zinc-400 text-sm">edit</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          class="px-3 py-1.5 font-sans text-sm font-medium text-zinc-900 hover:bg-zinc-100 transition-colors duration-200 active:scale-95"
+        >
+          New Collection
+        </button>
+        <button
+          class="px-3 py-1.5 font-sans text-sm font-medium text-zinc-500 hover:text-zinc-800 transition-colors duration-200 active:scale-95 flex items-center gap-2"
+        >
+          Preview
+          <span class="material-symbols-outlined text-base">visibility</span>
+        </button>
+        <div class="h-4 w-[1px] bg-zinc-200 mx-1"></div>
+        <button
+          class="flex items-center gap-2 px-4 py-1.5 bg-primary text-on-primary font-sans text-sm font-medium rounded-lg active:scale-95 transition-transform"
+        >
+          <span class="material-symbols-outlined text-base">cloud_done</span>
+          Save
+          <div
+            class="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]"
+          ></div>
+        </button>
+      </div>
+    </header>
+    <div class="flex h-[calc(100vh-3.5rem)] overflow-hidden">
+      <!-- Left SideNav -->
+      <aside class="flex flex-col w-64 h-full py-4 px-4 bg-[#fcfcfd] border-r border-zinc-200">
+        <div class="relative w-full">
+          <button
+            class="flex items-center justify-between w-full h-10 px-3 py-2 text-sm text-zinc-900 bg-white border border-zinc-200 rounded-md shadow-sm hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 transition-all"
+          >
+            <div class="flex items-center gap-2 overflow-hidden">
+              <span class="material-symbols-outlined text-zinc-400 text-lg">folder_open</span>
+              <span class="truncate font-medium">Collections</span>
+            </div>
+            <span class="material-symbols-outlined text-zinc-400 text-lg">unfold_more</span>
+          </button>
+        </div>
+        <div class="flex-1 mt-4 rounded-lg pt-2">
+          <nav class="space-y-1">
+            <a
+              class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md bg-zinc-900 text-white transition-all"
+              href="#"
+            >
+              <span class="material-symbols-outlined text-lg">music_note</span>
+              <span>Music</span>
+            </a>
+            <a
+              class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-all"
+              href="#"
+            >
+              <span class="material-symbols-outlined text-lg">movie</span>
+              <span>Movies</span>
+            </a>
+            <a
+              class="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 transition-all"
+              href="#"
+            >
+              <span class="material-symbols-outlined text-lg">sports_esports</span>
+              <span>Games</span>
+            </a>
+          </nav>
+        </div>
+      </aside>
+      <!-- Main Content Area -->
+      <main class="flex-1 overflow-y-auto bg-[#f9f9fb] p-12">
+        <div class="max-w-[1000px] mx-auto space-y-16">
+          <!-- S Tier Section -->
+          <section>
+            <div class="flex items-center justify-between mb-8">
+              <h2 class="font-h2 text-h2 text-zinc-900">S Tier</h2>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-medium text-zinc-500 px-2 py-1 bg-zinc-100 rounded"
+                  >2 items</span
+                >
+                <button class="p-1.5 text-zinc-400 hover:text-zinc-900 transition-colors">
+                  <span class="material-symbols-outlined">drag_indicator</span>
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <!-- S Tier Item 1 -->
+              <div
+                class="group relative bg-white border-2 border-primary rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                <div class="aspect-square bg-zinc-100 relative">
+                  <img
+                    alt="Album A cover"
+                    class="w-full h-full object-cover"
+                    data-alt="Modern minimalist album cover with abstract geometric shapes in vibrant teal and neon pink against a dark background"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7ljc2XsNgz5K2dnRFItVeZI_JkzzJRB5EvpJu77hmBzcl5achmYzzKdP7-jARAuhzH6_bEpYGPNjn_0oO0ntqId00FDK_ajjnjcvwH9JGZZpXDhQINEExm8As5qXHOQ0sWjXBhlcBp1Yu6Bo3PtO8oLLXqVlwg_qM19m7LEUW1YgbgZrUuoXMXgErii1gdI6CGzPcJza1xVvogarC8vvGUb_xwYP0RtYIRNYmz9MUmyB0-qRZmY-ejqSi4u5YHp8dcZaTUtrXAg"
+                  />
+                  <div
+                    class="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors"
+                  ></div>
+                </div>
+                <div class="p-4">
+                  <h3 class="font-h3 text-h3 text-sm mb-1">Album A</h3>
+                  <p class="text-xs text-zinc-500 line-clamp-2">
+                    A masterclass in modern sound design and emotive synthesis.
+                  </p>
+                </div>
+                <div
+                  class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <button
+                    class="p-1.5 bg-white rounded-lg shadow-sm border border-zinc-200 hover:bg-zinc-50"
+                  >
+                    <span class="material-symbols-outlined text-xs">open_in_new</span>
+                  </button>
+                </div>
+              </div>
+              <div
+                class="group border-2 border-dashed border-zinc-200 rounded-xl flex flex-col items-center justify-center p-8 bg-zinc-50/50 hover:bg-zinc-50 hover:border-zinc-300 transition-all cursor-pointer min-h-[260px]"
+              >
+                <div
+                  class="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center text-zinc-400 mb-3 group-hover:bg-primary group-hover:text-white transition-colors"
+                >
+                  <span class="material-symbols-outlined">add</span>
+                </div>
+                <span class="text-xs font-medium text-zinc-400 group-hover:text-zinc-600"
+                  >Add Item</span
+                >
+              </div>
+              <!-- S Tier Placeholders -->
+            </div>
+          </section>
+          <!-- A Tier Section -->
+          <section>
+            <div class="flex items-center justify-between mb-8">
+              <h2 class="font-h2 text-h2 text-zinc-900">A Tier</h2>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-medium text-zinc-500 px-2 py-1 bg-zinc-100 rounded"
+                  >3 items</span
+                >
+                <button class="p-1.5 text-zinc-400 hover:text-zinc-900 transition-colors">
+                  <span class="material-symbols-outlined">drag_indicator</span>
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <!-- 3 Album Items -->
+              <div
+                class="group relative bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                <div class="aspect-square bg-zinc-100 relative">
+                  <img
+                    alt="Album B cover"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLJ05L8DDm6gDV--xRJY9l46UkITMTkPH2o8nEONUYFrJ5CRyEwiI_hbrchinXHRmRmY2gP9Jp7Z3RyAHmSL2QzKU_D4iUxCq8ybvt7erNmWCFAwBYKnVminPB3H0SUu5qiRmavviObMSCcDDg07I14nBfNK0-05X2Jpp8qeLIEWCFFl5I3oGHsz0BlBI-8AEPDOvZnrtrNSI914EDAQPZMcZ4fKMJI2XviMzqb2u3NBTg4RBE9U2CMnyeRIqlehS0TyEOI8UwaA"
+                  />
+                </div>
+                <div class="p-4">
+                  <h3 class="font-h3 text-h3 text-sm mb-1">Ethereal Drift</h3>
+                  <p class="text-xs text-zinc-500 line-clamp-2">
+                    Atmospheric soundscapes and deep ambient textures.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="group relative bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                <div class="aspect-square bg-zinc-100 relative">
+                  <img
+                    alt="Album C cover"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7ljc2XsNgz5K2dnRFItVeZI_JkzzJRB5EvpJu77hmBzcl5achmYzzKdP7-jARAuhzH6_bEpYGPNjn_0oO0ntqId00FDK_ajjnjcvwH9JGZZpXDhQINEExm8As5qXHOQ0sWjXBhlcBp1Yu6Bo3PtO8oLLXqVlwg_qM19m7LEUW1YgbgZrUuoXMXgErii1gdI6CGzPcJza1xVvogarC8vvGUb_xwYP0RtYIRNYmz9MUmyB0-qRZmY-ejqSi4u5YHp8dcZaTUtrXAg"
+                  />
+                </div>
+                <div class="p-4">
+                  <h3 class="font-h3 text-h3 text-sm mb-1">Neon Pulse</h3>
+                  <p class="text-xs text-zinc-500 line-clamp-2">
+                    A high-energy journey through synthwave landscapes.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="group relative bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                <div class="aspect-square bg-zinc-100 relative">
+                  <img
+                    alt="Album D cover"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLJ05L8DDm6gDV--xRJY9l46UkITMTkPH2o8nEONUYFrJ5CRyEwiI_hbrchinXHRmRmY2gP9Jp7Z3RyAHmSL2QzKU_D4iUxCq8ybvt7erNmWCFAwBYKnVminPB3H0SUu5qiRmavviObMSCcDDg07I14nBfNK0-05X2Jpp8qeLIEWCFFl5I3oGHsz0BlBI-8AEPDOvZnrtrNSI914EDAQPZMcZ4fKMJI2XviMzqb2u3NBTg4RBE9U2CMnyeRIqlehS0TyEOI8UwaA"
+                  />
+                </div>
+                <div class="p-4">
+                  <h3 class="font-h3 text-h3 text-sm mb-1">Carbon Echo</h3>
+                  <p class="text-xs text-zinc-500 line-clamp-2">
+                    Industrial percussion meets glitchy melodic structures.
+                  </p>
+                </div>
+              </div>
+              <!-- Add Item slot -->
+              <div
+                class="group border-2 border-dashed border-zinc-200 rounded-xl flex flex-col items-center justify-center p-8 bg-zinc-50/50 hover:bg-zinc-50 hover:border-zinc-300 transition-all cursor-pointer min-h-[260px]"
+              >
+                <div
+                  class="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center text-zinc-400 mb-3 group-hover:bg-primary group-hover:text-white transition-colors"
+                >
+                  <span class="material-symbols-outlined">add</span>
+                </div>
+                <span class="text-xs font-medium text-zinc-400 group-hover:text-zinc-600"
+                  >Add Item</span
+                >
+              </div>
+            </div>
+          </section>
+          <!-- B Tier Section -->
+          <section>
+            <div class="flex items-center justify-between mb-8">
+              <h2 class="font-h2 text-h2 text-zinc-900">B Tier</h2>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-medium text-zinc-500 px-2 py-1 bg-zinc-100 rounded"
+                  >7 items</span
+                >
+                <button class="p-1.5 text-zinc-400 hover:text-zinc-900 transition-colors">
+                  <span class="material-symbols-outlined">drag_indicator</span>
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <!-- 6 Album Items (flowing across rows) -->
+              <div
+                class="group relative bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                <div class="aspect-square bg-zinc-100 relative">
+                  <img
+                    alt="Album cover"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7ljc2XsNgz5K2dnRFItVeZI_JkzzJRB5EvpJu77hmBzcl5achmYzzKdP7-jARAuhzH6_bEpYGPNjn_0oO0ntqId00FDK_ajjnjcvwH9JGZZpXDhQINEExm8As5qXHOQ0sWjXBhlcBp1Yu6Bo3PtO8oLLXqVlwg_qM19m7LEUW1YgbgZrUuoXMXgErii1gdI6CGzPcJza1xVvogarC8vvGUb_xwYP0RtYIRNYmz9MUmyB0-qRZmY-ejqSi4u5YHp8dcZaTUtrXAg"
+                  />
+                </div>
+                <div class="p-4">
+                  <h3 class="font-h3 text-h3 text-sm mb-1">Static Rain</h3>
+                  <p class="text-xs text-zinc-500 line-clamp-2">
+                    Lo-fi beats for rainy afternoons.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="group relative bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                <div class="aspect-square bg-zinc-100 relative">
+                  <img
+                    alt="Album cover"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLJ05L8DDm6gDV--xRJY9l46UkITMTkPH2o8nEONUYFrJ5CRyEwiI_hbrchinXHRmRmY2gP9Jp7Z3RyAHmSL2QzKU_D4iUxCq8ybvt7erNmWCFAwBYKnVminPB3H0SUu5qiRmavviObMSCcDDg07I14nBfNK0-05X2Jpp8qeLIEWCFFl5I3oGHsz0BlBI-8AEPDOvZnrtrNSI914EDAQPZMcZ4fKMJI2XviMzqb2u3NBTg4RBE9U2CMnyeRIqlehS0TyEOI8UwaA"
+                  />
+                </div>
+                <div class="p-4">
+                  <h3 class="font-h3 text-h3 text-sm mb-1">Copper Sky</h3>
+                  <p class="text-xs text-zinc-500 line-clamp-2">
+                    Modern folk with electronic undertones.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="group relative bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                <div class="aspect-square bg-zinc-100 relative">
+                  <img
+                    alt="Album cover"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7ljc2XsNgz5K2dnRFItVeZI_JkzzJRB5EvpJu77hmBzcl5achmYzzKdP7-jARAuhzH6_bEpYGPNjn_0oO0ntqId00FDK_ajjnjcvwH9JGZZpXDhQINEExm8As5qXHOQ0sWjXBhlcBp1Yu6Bo3PtO8oLLXqVlwg_qM19m7LEUW1YgbgZrUuoXMXgErii1gdI6CGzPcJza1xVvogarC8vvGUb_xwYP0RtYIRNYmz9MUmyB0-qRZmY-ejqSi4u5YHp8dcZaTUtrXAg"
+                  />
+                </div>
+                <div class="p-4">
+                  <h3 class="font-h3 text-h3 text-sm mb-1">Velvet Void</h3>
+                  <p class="text-xs text-zinc-500 line-clamp-2">Dark jazz experimental session.</p>
+                </div>
+              </div>
+              <div
+                class="group relative bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                <div class="aspect-square bg-zinc-100 relative">
+                  <img
+                    alt="Album cover"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLJ05L8DDm6gDV--xRJY9l46UkITMTkPH2o8nEONUYFrJ5CRyEwiI_hbrchinXHRmRmY2gP9Jp7Z3RyAHmSL2QzKU_D4iUxCq8ybvt7erNmWCFAwBYKnVminPB3H0SUu5qiRmavviObMSCcDDg07I14nBfNK0-05X2Jpp8qeLIEWCFFl5I3oGHsz0BlBI-8AEPDOvZnrtrNSI914EDAQPZMcZ4fKMJI2XviMzqb2u3NBTg4RBE9U2CMnyeRIqlehS0TyEOI8UwaA"
+                  />
+                </div>
+                <div class="p-4">
+                  <h3 class="font-h3 text-h3 text-sm mb-1">Digital Dust</h3>
+                  <p class="text-xs text-zinc-500 line-clamp-2">
+                    IDM explorations in grainy fidelity.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="group relative bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                <div class="aspect-square bg-zinc-100 relative">
+                  <img
+                    alt="Album cover"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7ljc2XsNgz5K2dnRFItVeZI_JkzzJRB5EvpJu77hmBzcl5achmYzzKdP7-jARAuhzH6_bEpYGPNjn_0oO0ntqId00FDK_ajjnjcvwH9JGZZpXDhQINEExm8As5qXHOQ0sWjXBhlcBp1Yu6Bo3PtO8oLLXqVlwg_qM19m7LEUW1YgbgZrUuoXMXgErii1gdI6CGzPcJza1xVvogarC8vvGUb_xwYP0RtYIRNYmz9MUmyB0-qRZmY-ejqSi4u5YHp8dcZaTUtrXAg"
+                  />
+                </div>
+                <div class="p-4">
+                  <h3 class="font-h3 text-h3 text-sm mb-1">Solar Wind</h3>
+                  <p class="text-xs text-zinc-500 line-clamp-2">
+                    Uplifting trance with melodic focus.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="group relative bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer"
+              >
+                <div class="aspect-square bg-zinc-100 relative">
+                  <img
+                    alt="Album cover"
+                    class="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLJ05L8DDm6gDV--xRJY9l46UkITMTkPH2o8nEONUYFrJ5CRyEwiI_hbrchinXHRmRmY2gP9Jp7Z3RyAHmSL2QzKU_D4iUxCq8ybvt7erNmWCFAwBYKnVminPB3H0SUu5qiRmavviObMSCcDDg07I14nBfNK0-05X2Jpp8qeLIEWCFFl5I3oGHsz0BlBI-8AEPDOvZnrtrNSI914EDAQPZMcZ4fKMJI2XviMzqb2u3NBTg4RBE9U2CMnyeRIqlehS0TyEOI8UwaA"
+                  />
+                </div>
+                <div class="p-4">
+                  <h3 class="font-h3 text-h3 text-sm mb-1">Muted Ocean</h3>
+                  <p class="text-xs text-zinc-500 line-clamp-2">Deep house for nocturnal drives.</p>
+                </div>
+              </div>
+              <!-- Add Item slot -->
+              <div
+                class="group border-2 border-dashed border-zinc-200 rounded-xl flex flex-col items-center justify-center p-8 bg-zinc-50/50 hover:bg-zinc-50 hover:border-zinc-300 transition-all cursor-pointer min-h-[260px]"
+              >
+                <div
+                  class="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center text-zinc-400 mb-3 group-hover:bg-primary group-hover:text-white transition-colors"
+                >
+                  <span class="material-symbols-outlined">add</span>
+                </div>
+                <span class="text-xs font-medium text-zinc-400 group-hover:text-zinc-600"
+                  >Add Item</span
+                >
+              </div>
+            </div>
+          </section>
+          <!-- Quick Tips / Code Preview -->
+          <div class="mt-16 p-6 bg-white border border-zinc-200 rounded-xl">
+            <h4 class="text-sm font-semibold mb-3 flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm">code</span>
+              Jekyll Liquid Integration
+            </h4>
+            <div class="bg-zinc-900 rounded-lg p-4 font-code text-xs text-zinc-300 overflow-x-auto">
+              <span class="text-on-primary-container">{% for</span> item
+              <span class="text-on-primary-container">in</span> page.music.s_tier
+              <span class="text-on-primary-container">%}</span><br />
+                &lt;div class="grid-card"&gt;<br />
+                  &lt;img src="{{ item.image }}" alt="{{ item.title }}"&gt;<br />
+                  &lt;h3&gt;{{ item.title }}&lt;/h3&gt;<br />
+                &lt;/div&gt;<br />
+              <span class="text-on-primary-container">{% endfor %}</span>
+            </div>
+          </div>
+        </div>
+      </main>
+      <!-- Right SideNav (Item Editor Sheet) -->
+      <aside
+        class="w-80 h-full bg-white border-l border-zinc-200 flex flex-col shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.02)]"
+      >
+        <div class="p-6 border-b border-zinc-100 flex items-center justify-between">
+          <h3 class="font-h3 text-sm font-bold text-zinc-900">Item Editor</h3>
+          <button class="p-1 text-zinc-400 hover:text-zinc-900">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6 space-y-6">
+          <!-- Image Section -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-700 mb-2">Item Image</label>
+            <div class="relative group">
+              <div
+                class="aspect-square rounded-lg border border-zinc-200 bg-zinc-100 overflow-hidden"
+              >
+                <img
+                  alt="Preview"
+                  class="w-full h-full object-cover"
+                  data-alt="Abstract vibrant album cover art with geometric details and soft atmospheric glow"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLJ05L8DDm6gDV--xRJY9l46UkITMTkPH2o8nEONUYFrJ5CRyEwiI_hbrchinXHRmRmY2gP9Jp7Z3RyAHmSL2QzKU_D4iUxCq8ybvt7erNmWCFAwBYKnVminPB3H0SUu5qiRmavviObMSCcDDg07I14nBfNK0-05X2Jpp8qeLIEWCFFl5I3oGHsz0BlBI-8AEPDOvZnrtrNSI914EDAQPZMcZ4fKMJI2XviMzqb2u3NBTg4RBE9U2CMnyeRIqlehS0TyEOI8UwaA"
+                />
+              </div>
+              <div
+                class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg"
+              >
+                <div class="flex gap-2">
+                  <button
+                    class="p-2 bg-white rounded-md text-xs font-medium hover:bg-zinc-50 flex items-center gap-1"
+                  >
+                    <span class="material-symbols-outlined text-sm">crop</span>
+                    Crop
+                  </button>
+                  <button
+                    class="p-2 bg-white rounded-md text-xs font-medium hover:bg-zinc-50 flex items-center gap-1"
+                  >
+                    <span class="material-symbols-outlined text-sm">upload</span>
+                    Replace
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Form Fields -->
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-zinc-700 mb-1.5">Title</label>
+              <input
+                class="w-full px-3 py-2 text-sm border border-zinc-200 rounded focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                type="text"
+                value="Album A"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-zinc-700 mb-1.5">Description</label>
+              <textarea
+                class="w-full px-3 py-2 text-sm border border-zinc-200 rounded focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none"
+                rows="3"
+              >
+A masterclass in modern sound design and emotive synthesis.</textarea
+              >
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-zinc-700 mb-1.5">Link</label>
+              <div class="relative">
+                <span
+                  class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 text-sm"
+                  >link</span
+                >
+                <input
+                  class="w-full pl-9 pr-3 py-2 text-sm border border-zinc-200 rounded focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                  type="text"
+                  value="https://example.com/a"
+                />
+              </div>
+            </div>
+          </div>
+          <!-- Metadata / Tags -->
+          <div>
+            <label class="block text-xs font-semibold text-zinc-700 mb-2">Category Tags</label>
+            <div class="flex flex-wrap gap-2">
+              <span
+                class="inline-flex items-center gap-1 px-2 py-0.5 bg-zinc-100 text-[10px] font-bold text-zinc-600 rounded"
+                >ELECTRONIC <button class="hover:text-zinc-900">×</button></span
+              >
+              <span
+                class="inline-flex items-center gap-1 px-2 py-0.5 bg-zinc-100 text-[10px] font-bold text-zinc-600 rounded"
+                >2024 <button class="hover:text-zinc-900">×</button></span
+              >
+              <button
+                class="inline-flex items-center px-2 py-0.5 border border-dashed border-zinc-300 text-[10px] font-bold text-zinc-400 rounded hover:border-zinc-400 hover:text-zinc-500 transition-colors"
+              >
+                + ADD TAG
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="p-6 border-t border-zinc-100 space-y-3">
+          <button
+            class="w-full py-2 bg-primary text-on-primary text-sm font-medium rounded active:scale-[0.98] transition-transform"
+          >
+            Done Editing
+          </button>
+          <button
+            class="w-full py-2 bg-white text-error text-sm font-medium border border-zinc-200 rounded hover:bg-error/5 hover:border-error transition-all active:scale-[0.98]"
+          >
+            Remove Item
+          </button>
+        </div>
+      </aside>
+    </div>
+  </body>
+</html>

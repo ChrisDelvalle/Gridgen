@@ -9,32 +9,32 @@ const jekyllRoot = join(process.cwd(), "tmp/e2e-jekyll");
 
 test("authors, crops, previews, and builds a collection", async ({ page, context }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "No collections yet" })).toBeVisible();
+  await expect(page.getByText("No collections yet")).toBeVisible();
 
-  await page.getByRole("button", { name: "Create collection" }).first().click();
+  await page.getByRole("button", { name: "Create Collection" }).first().click();
   const collectionTitle = page.getByRole("textbox", { name: "Collection title" });
   await expect(collectionTitle).toHaveValue("Untitled Collection");
 
   await collectionTitle.fill("Music");
   await page.getByLabel("Section title").fill("S Tier");
-  await page.getByRole("button", { name: "Add item" }).click();
+  await page.getByRole("button", { name: "Add Item" }).click();
 
   await page.getByRole("textbox", { exact: true, name: "Title" }).fill("Album A");
   await page.getByRole("textbox", { name: "Description" }).fill("Essential listen");
   await page.getByRole("textbox", { name: "Link" }).fill("https://example.com/album-a");
   await page
-    .getByLabel("Image")
+    .locator("input[type='file']")
     .setInputFiles(join(process.cwd(), "examples/sample-grid/assets/music/sources/album-a.png"));
   await expect(page.getByRole("button", { name: "Crop" })).toBeEnabled();
 
   await page.getByRole("button", { name: "Crop" }).click();
   await expect(page.getByRole("dialog", { name: "Crop image" })).toBeVisible();
   await page.getByRole("slider").press("ArrowRight");
-  await page.getByRole("button", { name: "Apply crop" }).click();
+  await page.getByRole("button", { name: "Apply Crop" }).click();
   await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Save" }).click();
-  await expect(page.getByText("Saved")).toBeVisible();
+  await expect(page.getByLabel("Save state: Saved")).toBeVisible();
 
   const previewPagePromise = context.waitForEvent("page");
   await page.getByRole("button", { name: "Preview" }).click();
@@ -59,6 +59,84 @@ test("authors, crops, previews, and builds a collection", async ({ page, context
 
   expect(savedCollection.sections[0].items[0].image.crop.width).toBeLessThanOrEqual(100);
   expect(generatedInclude).toContain("Album A");
+});
+
+test("supports redesigned shell, sidebar, menus, and responsive editor surfaces", async ({
+  page
+}) => {
+  await page.setViewportSize({ height: 900, width: 1440 });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "New Collection" }).click();
+  await expect(page.getByRole("textbox", { name: "Collection title" })).toBeVisible();
+  await page.getByRole("textbox", { name: "Collection title" }).fill("Shell Test");
+  await page.getByLabel("Section title").fill("A Tier");
+  await page.getByRole("button", { name: "Add Item" }).click();
+  await page.getByRole("textbox", { exact: true, name: "Title" }).fill("Album B");
+  await page.getByRole("textbox", { name: "Link" }).fill("https://example.com/album-b");
+  await page
+    .locator("input[type='file']")
+    .setInputFiles(join(process.cwd(), "examples/sample-grid/assets/music/sources/album-a.png"));
+  await expect(page.getByRole("button", { name: "Crop" })).toBeEnabled();
+
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByLabel("Save state: Saved")).toBeVisible();
+
+  await page.getByRole("button", { name: "Toggle collections sidebar" }).click();
+  await expect(page.locator("[data-slot='sidebar'][data-state='collapsed']")).toBeVisible();
+  await page.getByRole("button", { name: "Toggle collections sidebar" }).click();
+  await expect(page.locator("[data-slot='sidebar'][data-state='expanded']")).toBeVisible();
+
+  const resizeHandle = page.locator("[data-slot='resizable-handle']").first();
+  const handleBox = await resizeHandle.boundingBox();
+
+  if (handleBox === null) {
+    throw new Error("Expected desktop editor resize handle.");
+  }
+
+  await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(handleBox.x - 60, handleBox.y + 20);
+  await page.mouse.up();
+  const desktopInspector = page.getByRole("complementary", { name: "Item editor" });
+  await expect(desktopInspector).toBeVisible();
+  const inspectorBox = await desktopInspector.boundingBox();
+
+  if (inspectorBox === null) {
+    throw new Error("Expected desktop item editor bounds.");
+  }
+
+  expect(inspectorBox.x + inspectorBox.width).toBeLessThanOrEqual(1440);
+
+  await page.getByRole("button", { name: "Collapse section" }).first().click();
+  await expect(page.getByRole("button", { name: "Add Item" })).toBeHidden();
+  await page.getByRole("button", { name: "Expand section" }).first().click();
+  await expect(page.getByRole("button", { name: "Add Item" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Item actions" }).first().click();
+  await expect(page.getByRole("menuitem", { name: "Open link" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Move left" })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.getByText("Album B").click();
+  await expect(page.getByRole("button", { name: "Replace" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Crop" })).toBeEnabled();
+
+  await page.setViewportSize({ height: 900, width: 768 });
+  await expect(page.getByRole("dialog", { name: "Item Editor" })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.setViewportSize({ height: 820, width: 390 });
+  await page.getByRole("button", { name: "Toggle collections sidebar" }).click();
+  await expect(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible();
+  await page.goto("/");
+
+  await page.getByText("Album B").click();
+  await expect(page.getByRole("dialog", { name: "Item Editor" })).toBeVisible();
+  await page.getByRole("button", { name: "Crop" }).click();
+  await expect(page.getByRole("dialog", { name: "Crop image" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");
 });
 
 function readSavedCollection(input: unknown): {
