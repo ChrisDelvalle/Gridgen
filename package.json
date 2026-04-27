@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "description": "Author and build opinionated recommendation grids for Astro and Jekyll.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChrisDelvalle/Gridgen.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ChrisDelvalle/Gridgen/issues"
+  },
+  "homepage": "https://github.com/ChrisDelvalle/Gridgen#readme",
   "private": false,
   "packageManager": "bun@1.3.12",
   "type": "module",

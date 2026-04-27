@@ -731,7 +731,7 @@ for implementation work and definitions of done.
 - [x] Ensure the published package is not marked `private`.
 - [x] Add package metadata needed for installable CLI use: `name`, `version`,
       `type`, `bin`, `files`, `license`, and useful package description.
-- [ ] Add repository metadata once the stable public repository URL is known.
+- [x] Add repository metadata once the stable public repository URL is known.
 - [x] Build the CLI into a published artifact instead of exposing raw workspace
       TypeScript files.
 - [x] Use a Bun-compatible executable shebang for the generated CLI entrypoint.

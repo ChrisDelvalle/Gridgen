@@ -11,13 +11,13 @@ opinionated `/mu/core`-style poster grid.
 During alpha development, install from a pinned GitHub tag or commit:
 
 ```sh
-bun add -d github:<owner>/gridgen#<tag>
+bun add -d github:ChrisDelvalle/Gridgen#v0.0.1-alpha.0
 ```
 
 For local testing from a checked-out repository, install by filesystem path:
 
 ```sh
-bun add -d /path/to/gridgen
+bun add -d /Users/irk/Developer/JAVASCRIPT/gridgen
 ```
 
 After a registry release, the intended stable usage is:
