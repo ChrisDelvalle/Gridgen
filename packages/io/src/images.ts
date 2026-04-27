@@ -8,7 +8,6 @@ import {
   type GridgenError,
   GridgenErrorCode,
   type ImageCrop,
-  type JekyllBuildPlan,
   ok,
   type PlannedImageOutput,
   planSourceWorkspacePaths,
@@ -30,12 +29,12 @@ const generatedImageSizePixels = 512;
  * Planned image processing input.
  *
  * @property imageOutput Planned output produced by the core build planner.
- * @property plan Owning build plan.
+ * @property collectionId Stable owning collection ID.
  * @property workspaceRoot Absolute source workspace root.
  */
 export interface ProcessPlannedImageInput {
+  readonly collectionId: CollectionId;
   readonly imageOutput: PlannedImageOutput;
-  readonly plan: JekyllBuildPlan;
   readonly workspaceRoot: string;
 }
 
@@ -58,20 +57,22 @@ export interface CreatePreviewImageInput {
  * Processes every planned image for one build plan.
  *
  * @param input Planned image batch input.
- * @param input.plan Owning build plan.
+ * @param input.collectionId Stable owning collection ID.
+ * @param input.imageOutputs Planned image outputs.
  * @param input.workspaceRoot Absolute source workspace root.
  * @returns Write report or a structured image/write failure.
  */
 export async function processPlannedImages(input: {
-  readonly plan: JekyllBuildPlan;
+  readonly collectionId: CollectionId;
+  readonly imageOutputs: readonly PlannedImageOutput[];
   readonly workspaceRoot: string;
 }): Promise<Result<IoWriteReport, IoWriteFailure>> {
   const touchedPaths: string[] = [];
 
-  for (const imageOutput of input.plan.imageOutputs) {
+  for (const imageOutput of input.imageOutputs) {
     const result = await processPlannedImage({
+      collectionId: input.collectionId,
       imageOutput,
-      plan: input.plan,
       workspaceRoot: input.workspaceRoot
     });
 
@@ -98,7 +99,7 @@ export async function processPlannedImage(
   input: ProcessPlannedImageInput
 ): Promise<Result<IoWriteReport, IoWriteFailure>> {
   const sourcePath = planSourceImagePath({
-    collectionId: input.plan.collectionId,
+    collectionId: input.collectionId,
     sourceFileName: input.imageOutput.sourceFileName,
     workspaceRoot: input.workspaceRoot
   });

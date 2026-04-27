@@ -12,8 +12,11 @@ export type {
   UploadAssetResponseDto,
   ValidateCollectionResponseDto
 } from "./api/dtos";
-export { planJekyllBuild } from "./build/build-planner";
+export { planAstroReactBuild, planJekyllBuild } from "./build/build-planner";
 export type {
+  AstroReactBuildInput,
+  AstroReactBuildPlan,
+  GridgenBuildTarget,
   JekyllBuildInput,
   JekyllBuildPlan,
   PlannedImageOutput,
@@ -86,23 +89,28 @@ export {
 } from "./paths/browser-paths";
 export {
   parseAbsolutePath,
+  planAstroReactOutputPaths,
   planChildPath,
   planJekyllOutputPaths,
   planSourceWorkspacePaths
 } from "./paths/path-planning";
 export type {
   AbsolutePath,
+  AstroReactOutputPaths,
+  AstroReactOutputPathsInput,
   JekyllOutputPaths,
+  JekyllOutputPathsInput,
   PlannedChildPathInput,
   PlannedPath,
   RelativePath,
   SourceWorkspacePaths,
-  SourceWorkspacePathsInput,
-  JekyllOutputPathsInput
+  SourceWorkspacePathsInput
 } from "./paths/path-planning";
 export {
   createJekyllAssetUrlExpression,
   prepareRenderGrid,
+  renderAstroReactComponent,
+  renderGridDataJson,
   renderGridCss,
   renderGridHtml
 } from "./render/grid-renderer";
@@ -114,7 +122,11 @@ export type {
   RenderGridImage,
   RenderGridInput,
   RenderGridItem,
-  RenderGridSection
+  RenderGridSection,
+  RenderedGridCollectionJson,
+  RenderedGridImageJson,
+  RenderedGridItemJson,
+  RenderedGridSectionJson
 } from "./render/grid-renderer";
 export {
   parseCollectionId,

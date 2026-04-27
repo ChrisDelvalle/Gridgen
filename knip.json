@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/knip/schema.json",
+  "ignoreDependencies": ["sharp"],
   "ignore": ["apps/web/src/react-jsx-compat.d.ts"],
   "ignoreBinaries": ["gitleaks"],
   "ignoreIssues": {

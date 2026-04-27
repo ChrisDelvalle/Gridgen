@@ -11,12 +11,13 @@ import {
   err,
   type GridgenError,
   GridgenErrorCode,
-  type JekyllBuildPlan,
   ok,
   parseDraftCollection,
   parseSafeFileName,
   parseSlug,
+  type PlannedImageOutput,
   type PlannedPath,
+  type PlannedTextOutput,
   planSourceWorkspacePaths,
   type Result,
   serializeDraftCollection
@@ -120,12 +121,12 @@ export interface SoftDeleteCollectionInput {
 }
 
 /**
- * Generated Jekyll text output write input.
+ * Generated text output write input.
  *
- * @property plan Pure core build plan to execute.
+ * @property outputs Pure core planned text outputs to execute.
  */
-export interface WriteJekyllTextOutputsInput {
-  readonly plan: JekyllBuildPlan;
+export interface WritePlannedTextOutputsInput {
+  readonly outputs: readonly PlannedTextOutput[];
 }
 
 /**
@@ -153,10 +154,12 @@ export interface ValidateSourceAssetsInput {
 /**
  * Stale generated asset cleanup input.
  *
- * @property plan Build plan whose collection output directory should be cleaned.
+ * @property cleanupDirectory Generated asset directory to clean.
+ * @property imageOutputs Expected generated image outputs.
  */
 export interface RemoveStaleGeneratedAssetsInput {
-  readonly plan: JekyllBuildPlan;
+  readonly cleanupDirectory: PlannedPath;
+  readonly imageOutputs: readonly PlannedImageOutput[];
 }
 
 /**
@@ -417,17 +420,17 @@ export async function softDeleteCollection(
 }
 
 /**
- * Writes planned generated include and CSS text outputs atomically.
+ * Writes planned generated text outputs atomically.
  *
  * @param input Generated text write input.
  * @returns Write report or a structured write failure with touched paths.
  */
-export async function writeJekyllTextOutputs(
-  input: WriteJekyllTextOutputsInput
+export async function writePlannedTextOutputs(
+  input: WritePlannedTextOutputsInput
 ): Promise<Result<IoWriteReport, IoWriteFailure>> {
   const touchedPaths: string[] = [];
 
-  for (const output of [input.plan.htmlOutput, input.plan.cssOutput]) {
+  for (const output of input.outputs) {
     const result = await writeTextAtomically(output.outputPath, output.contents);
 
     if (!result.ok) {
@@ -452,11 +455,11 @@ export async function writeJekyllTextOutputs(
 export async function writeGeneratedAsset(
   input: WriteGeneratedAssetInput
 ): Promise<Result<IoWriteReport, IoWriteFailure>> {
-  if (!input.outputPath.relativePath.value.startsWith("assets/gridgen/")) {
+  if (!isGeneratedAssetPath(input.outputPath.relativePath.value)) {
     return err({
       error: createPathError(
         GridgenErrorCode.PathOutsideRoot,
-        "Generated assets must stay inside assets/gridgen.",
+        "Generated assets must stay inside a Gridgen-owned generated asset directory.",
         {
           displayPath: input.outputPath.relativePath.value
         }
@@ -522,9 +525,9 @@ export async function validateSourceAssets(
 export async function removeStaleGeneratedAssets(
   input: RemoveStaleGeneratedAssetsInput
 ): Promise<Result<IoWriteReport, IoWriteFailure>> {
-  const cleanupDirectory = input.plan.cleanupDirectory.absolutePath.value;
+  const cleanupDirectory = input.cleanupDirectory.absolutePath.value;
   const expectedPaths = new Set(
-    input.plan.imageOutputs.map((imageOutput) => imageOutput.outputPath.absolutePath.value)
+    input.imageOutputs.map((imageOutput) => imageOutput.outputPath.absolutePath.value)
   );
   const entries = await readOptionalDirectory(cleanupDirectory);
   const touchedPaths: string[] = [];
@@ -562,6 +565,12 @@ export async function removeStaleGeneratedAssets(
   }
 
   return ok({ touchedPaths });
+}
+
+function isGeneratedAssetPath(relativePath: string): boolean {
+  return (
+    relativePath.startsWith("assets/gridgen/") || relativePath.startsWith("public/gridgen/assets/")
+  );
 }
 
 async function writeTextAtomically(

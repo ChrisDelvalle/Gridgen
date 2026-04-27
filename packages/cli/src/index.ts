@@ -2,12 +2,18 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
 import {
+  type AstroReactBuildPlan,
   type DraftCollection,
+  type GridgenBuildTarget,
   type GridgenError,
   GridgenErrorCode,
   type GridRenderLayout,
   type JekyllBuildPlan,
+  planAstroReactBuild,
   planJekyllBuild,
+  type PlannedTextOutput,
+  type RenderableCollection,
+  type Result,
   serializeGridgenError,
   toRenderableCollection
 } from "@gridgen/core";
@@ -18,7 +24,7 @@ import {
   readCollectionFile,
   removeStaleGeneratedAssets,
   validateSourceAssets,
-  writeJekyllTextOutputs
+  writePlannedTextOutputs
 } from "@gridgen/io";
 import {
   type GridgenServeAdapter,
@@ -109,16 +115,18 @@ export async function runGridgenCli(input: RunGridgenCliInput): Promise<number> 
   program
     .command("build")
     .argument("<source-file-or-dir>")
-    .argument("<jekyll-site>")
+    .argument("<site-root>")
     .option("--layout <layout>", "Static renderer layout: classic or poster.", parseLayoutOption)
-    .description("Build static Jekyll include and CSS assets.")
-    .action(async (source: string, jekyllSite: string, options: BuildCommandOptions) => {
+    .option("--target <target>", "Build target: astro-react or jekyll.", parseBuildTargetOption)
+    .description("Build generated Gridgen assets.")
+    .action(async (source: string, siteRoot: string, options: BuildCommandOptions) => {
       exitCode = await buildCommand({
         cwd: input.cwd,
-        jekyllSite,
         layout: options.layout,
         output: input.output,
-        source
+        siteRoot,
+        source,
+        target: options.target
       });
     });
 
@@ -143,10 +151,11 @@ interface ValidateCommandInput {
 
 interface BuildCommandInput {
   readonly cwd: string;
-  readonly jekyllSite: string;
   readonly layout: GridRenderLayout | undefined;
   readonly output: GridgenCliOutput;
+  readonly siteRoot: string;
   readonly source: string;
+  readonly target: GridgenBuildTarget | undefined;
 }
 
 interface RunCommandInput {
@@ -168,6 +177,7 @@ interface RunCommandOptions {
 
 interface BuildCommandOptions {
   readonly layout?: GridRenderLayout;
+  readonly target?: GridgenBuildTarget;
 }
 
 interface CollectionValidationTarget {
@@ -176,8 +186,13 @@ interface CollectionValidationTarget {
 }
 
 interface PlannedBuildTarget {
-  readonly plan: JekyllBuildPlan;
+  readonly plan: AstroReactBuildPlan | JekyllBuildPlan;
   readonly workspaceRoot: string;
+}
+
+interface BuildExecutionFailure {
+  readonly error: GridgenError;
+  readonly touchedPaths: readonly string[];
 }
 
 async function validateCommand(input: ValidateCommandInput): Promise<number> {
@@ -263,7 +278,9 @@ async function runCommand(input: RunCommandInput): Promise<number> {
 
 async function buildCommand(input: BuildCommandInput): Promise<number> {
   const sourcePath = path.resolve(input.cwd, input.source);
-  const jekyllRoot = path.resolve(input.cwd, input.jekyllSite);
+  const siteRoot = path.resolve(input.cwd, input.siteRoot);
+  const target = input.target ?? "astro-react";
+  const layout = input.layout ?? "poster";
   const targets = await resolveValidationTargets(sourcePath);
 
   if (!targets.ok) {
@@ -272,7 +289,7 @@ async function buildCommand(input: BuildCommandInput): Promise<number> {
     return 1;
   }
 
-  const plannedTargets = await planBuildTargets(targets.value, jekyllRoot, input.layout);
+  const plannedTargets = await planBuildTargets(targets.value, siteRoot, target, layout);
 
   if (!plannedTargets.ok) {
     printError(input.output, plannedTargets.error);
@@ -280,61 +297,106 @@ async function buildCommand(input: BuildCommandInput): Promise<number> {
     return 1;
   }
 
-  for (const target of plannedTargets.value) {
-    const imageResult = await processPlannedImages({
-      plan: target.plan,
-      workspaceRoot: target.workspaceRoot
+  const writtenSharedTextPaths = new Set<string>();
+  let wroteJekyllStylesheet = false;
+
+  for (const plannedTarget of plannedTargets.value) {
+    const result = await executePlannedBuildTarget({
+      output: input.output,
+      plannedTarget,
+      writtenSharedTextPaths
     });
 
-    if (!imageResult.ok) {
-      printError(input.output, imageResult.error.error);
+    if (!result.ok) {
+      printError(input.output, result.error.error);
 
-      return 1;
-    }
-
-    const cleanupResult = await removeStaleGeneratedAssets({
-      plan: target.plan
-    });
-
-    /* c8 ignore next 6 */
-    if (!cleanupResult.ok) {
-      // Covered at the IO boundary; driving this through the CLI would require
-      // brittle filesystem permission timing between image writes and cleanup.
-      printError(input.output, cleanupResult.error.error);
-
-      return 1;
-    }
-
-    const writeResult = await writeJekyllTextOutputs({
-      plan: target.plan
-    });
-
-    if (!writeResult.ok) {
-      printError(input.output, writeResult.error.error);
-
-      for (const touchedPath of writeResult.error.touchedPaths) {
+      for (const touchedPath of result.error.touchedPaths) {
         input.output.error(`possibly touched ${touchedPath}`);
       }
 
       return 1;
     }
 
-    input.output.log(`wrote ${target.plan.htmlOutput.outputPath.relativePath.value}`);
-
-    for (const imageOutput of target.plan.imageOutputs) {
-      input.output.log(`wrote ${imageOutput.outputPath.relativePath.value}`);
-    }
+    wroteJekyllStylesheet = wroteJekyllStylesheet || result.value.wroteJekyllStylesheet;
   }
 
-  input.output.log("wrote assets/gridgen/gridgen.css");
+  if (wroteJekyllStylesheet) {
+    input.output.log("wrote assets/gridgen/gridgen.css");
+  }
 
   return 0;
 }
 
+async function executePlannedBuildTarget(input: {
+  readonly output: GridgenCliOutput;
+  readonly plannedTarget: PlannedBuildTarget;
+  readonly writtenSharedTextPaths: Set<string>;
+}): Promise<
+  | { readonly ok: true; readonly value: { readonly wroteJekyllStylesheet: boolean } }
+  | { readonly error: BuildExecutionFailure; readonly ok: false }
+> {
+  const imageResult = await processPlannedImages({
+    collectionId: input.plannedTarget.plan.collectionId,
+    imageOutputs: input.plannedTarget.plan.imageOutputs,
+    workspaceRoot: input.plannedTarget.workspaceRoot
+  });
+
+  if (!imageResult.ok) {
+    return { error: imageResult.error, ok: false };
+  }
+
+  const cleanupResult = await removeStaleGeneratedAssets({
+    cleanupDirectory: input.plannedTarget.plan.cleanupDirectory,
+    imageOutputs: input.plannedTarget.plan.imageOutputs
+  });
+
+  /* c8 ignore next 5 */
+  if (!cleanupResult.ok) {
+    // Covered at the IO boundary; driving this through the CLI would require
+    // brittle filesystem permission timing between image writes and cleanup.
+    return { error: cleanupResult.error, ok: false };
+  }
+
+  return writePlannedBuildTextOutputs({
+    output: input.output,
+    plan: input.plannedTarget.plan,
+    writtenSharedTextPaths: input.writtenSharedTextPaths
+  });
+}
+
+async function writePlannedBuildTextOutputs(input: {
+  readonly output: GridgenCliOutput;
+  readonly plan: AstroReactBuildPlan | JekyllBuildPlan;
+  readonly writtenSharedTextPaths: Set<string>;
+}): Promise<
+  | { readonly ok: true; readonly value: { readonly wroteJekyllStylesheet: boolean } }
+  | { readonly error: BuildExecutionFailure; readonly ok: false }
+> {
+  const textOutputs = getCollectionTextOutputs(input.plan);
+  const sharedTextOutputs = getUnwrittenSharedTextOutputs(input.plan, input.writtenSharedTextPaths);
+  const writeResult = await writePlannedTextOutputs({
+    outputs: [...sharedTextOutputs, ...textOutputs]
+  });
+
+  if (!writeResult.ok) {
+    return { error: writeResult.error, ok: false };
+  }
+
+  logPlannedBuildOutputs(input.output, input.plan, sharedTextOutputs, textOutputs);
+
+  return {
+    ok: true,
+    value: {
+      wroteJekyllStylesheet: !isAstroReactBuildPlan(input.plan) && sharedTextOutputs.length > 0
+    }
+  };
+}
+
 async function planBuildTargets(
   targets: readonly CollectionValidationTarget[],
-  jekyllRoot: string,
-  layout: GridRenderLayout | undefined
+  siteRoot: string,
+  buildTarget: GridgenBuildTarget,
+  layout: GridRenderLayout
 ): Promise<
   | { readonly ok: true; readonly value: readonly PlannedBuildTarget[] }
   | { readonly error: GridgenError; readonly ok: false }
@@ -350,16 +412,17 @@ async function planBuildTargets(
       return collection;
     }
 
-    const renderable = toRenderableCollection(collection.value);
+    const renderable = await validateCollectionForBuild(collection.value, target.workspaceRoot);
 
     if (!renderable.ok) {
       return renderable;
     }
 
-    const plan = planJekyllBuild({
+    const plan = planBuildTarget({
       collection: renderable.value,
-      jekyllRoot,
-      ...(layout === undefined ? {} : { layout })
+      layout,
+      siteRoot,
+      target: buildTarget
     });
 
     /* c8 ignore next 4 */
@@ -379,6 +442,92 @@ async function planBuildTargets(
     ok: true,
     value: plannedTargets
   };
+}
+
+function planBuildTarget(input: {
+  readonly collection: RenderableCollection;
+  readonly layout: GridRenderLayout;
+  readonly siteRoot: string;
+  readonly target: GridgenBuildTarget;
+}): Result<AstroReactBuildPlan | JekyllBuildPlan, GridgenError> {
+  switch (input.target) {
+    case "astro-react":
+      return planAstroReactBuild({
+        astroRoot: input.siteRoot,
+        collection: input.collection,
+        layout: input.layout
+      });
+    case "jekyll":
+      return planJekyllBuild({
+        collection: input.collection,
+        jekyllRoot: input.siteRoot,
+        layout: input.layout
+      });
+  }
+}
+
+function getCollectionTextOutputs(
+  plan: AstroReactBuildPlan | JekyllBuildPlan
+): readonly PlannedTextOutput[] {
+  if (isAstroReactBuildPlan(plan)) {
+    return [plan.dataOutput];
+  }
+
+  return [plan.htmlOutput];
+}
+
+function getSharedTextOutputs(
+  plan: AstroReactBuildPlan | JekyllBuildPlan
+): readonly PlannedTextOutput[] {
+  if (isAstroReactBuildPlan(plan)) {
+    return [plan.componentOutput, plan.cssOutput];
+  }
+
+  return [plan.cssOutput];
+}
+
+function getUnwrittenSharedTextOutputs(
+  plan: AstroReactBuildPlan | JekyllBuildPlan,
+  writtenSharedTextPaths: Set<string>
+): readonly PlannedTextOutput[] {
+  return getSharedTextOutputs(plan).filter((output) => {
+    const absolutePath = output.outputPath.absolutePath.value;
+
+    if (writtenSharedTextPaths.has(absolutePath)) {
+      return false;
+    }
+
+    writtenSharedTextPaths.add(absolutePath);
+
+    return true;
+  });
+}
+
+function logPlannedBuildOutputs(
+  output: GridgenCliOutput,
+  plan: AstroReactBuildPlan | JekyllBuildPlan,
+  sharedTextOutputs: readonly PlannedTextOutput[],
+  textOutputs: readonly PlannedTextOutput[]
+): void {
+  if (isAstroReactBuildPlan(plan)) {
+    for (const textOutput of [...sharedTextOutputs, ...textOutputs]) {
+      output.log(`wrote ${textOutput.outputPath.relativePath.value}`);
+    }
+  } else {
+    for (const textOutput of textOutputs) {
+      output.log(`wrote ${textOutput.outputPath.relativePath.value}`);
+    }
+  }
+
+  for (const imageOutput of plan.imageOutputs) {
+    output.log(`wrote ${imageOutput.outputPath.relativePath.value}`);
+  }
+}
+
+function isAstroReactBuildPlan(
+  plan: AstroReactBuildPlan | JekyllBuildPlan
+): plan is AstroReactBuildPlan {
+  return "dataOutput" in plan;
 }
 
 async function resolveValidationTargets(
@@ -436,7 +585,10 @@ async function resolveValidationTargets(
 async function validateCollectionForBuild(
   collection: DraftCollection,
   workspaceRoot: string
-): Promise<{ readonly ok: true } | { readonly error: GridgenError; readonly ok: false }> {
+): Promise<
+  | { readonly ok: true; readonly value: RenderableCollection }
+  | { readonly error: GridgenError; readonly ok: false }
+> {
   const renderable = toRenderableCollection(collection);
 
   if (!renderable.ok) {
@@ -452,7 +604,7 @@ async function validateCollectionForBuild(
     return assets;
   }
 
-  return { ok: true };
+  return renderable;
 }
 
 async function statPath(
@@ -520,6 +672,18 @@ function parseLayoutOption(input: string): GridRenderLayout {
     1,
     "commander.invalidArgument",
     "Layout must be either classic or poster."
+  );
+}
+
+function parseBuildTargetOption(input: string): GridgenBuildTarget {
+  if (input === "astro-react" || input === "jekyll") {
+    return input;
+  }
+
+  throw new CommanderError(
+    1,
+    "commander.invalidArgument",
+    "Target must be either astro-react or jekyll."
   );
 }
 

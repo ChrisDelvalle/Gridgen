@@ -15,13 +15,67 @@ import { storeSourceImage, writeCollectionFile } from "@gridgen/io";
 import { describe, expect, it } from "bun:test";
 
 describe("gridgen build", () => {
-  it("builds one collection file into Jekyll include and CSS outputs", async () => {
+  it("builds one collection file into default Astro React poster outputs", async () => {
+    const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
+    const astroRoot = await makeTemporaryDirectory("gridgen-build-astro-");
+    await createAndStoreRenderableDraft(workspaceRoot, "Music", "album-a.png");
+    const output = createCliOutput();
+    const exitCode = await runGridgenCli({
+      argv: ["build", path.join(workspaceRoot, "collections", "music.json"), astroRoot],
+      cwd: workspaceRoot,
+      output
+    });
+
+    expect(exitCode).toBe(0);
+    expect(output.stdout).toEqual([
+      "wrote src/gridgen/GridgenRecommendationGrid.tsx",
+      "wrote src/gridgen/gridgen.css",
+      "wrote src/gridgen/music.json",
+      "wrote public/gridgen/assets/music/album-a.webp"
+    ]);
+    await expectFileContains(
+      path.join(astroRoot, "src", "gridgen", "GridgenRecommendationGrid.tsx"),
+      "export default GridgenRecommendationGrid;"
+    );
+    await expectFileContains(
+      path.join(astroRoot, "src", "gridgen", "GridgenRecommendationGrid.tsx"),
+      "readonly collection: GridgenRenderedCollection;"
+    );
+    await expectFileContains(
+      path.join(astroRoot, "src", "gridgen", "GridgenRecommendationGrid.tsx"),
+      'className="gridgen-item-link"'
+    );
+    await expectFileContains(
+      path.join(astroRoot, "src", "gridgen", "gridgen.css"),
+      ".gridgen-collection--poster"
+    );
+    await expectFileContains(
+      path.join(astroRoot, "src", "gridgen", "music.json"),
+      '"layout": "poster"'
+    );
+    await expectFileContains(
+      path.join(astroRoot, "src", "gridgen", "music.json"),
+      '"/gridgen/assets/music/album-a.webp"'
+    );
+    await expectFileStartsWith(
+      path.join(astroRoot, "public", "gridgen", "assets", "music", "album-a.webp"),
+      "RIFF"
+    );
+  });
+
+  it("builds one collection file into explicit Jekyll include and CSS outputs", async () => {
     const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
     const jekyllRoot = await makeTemporaryDirectory("gridgen-build-jekyll-");
     await createAndStoreRenderableDraft(workspaceRoot, "Music", "album-a.png");
     const output = createCliOutput();
     const exitCode = await runGridgenCli({
-      argv: ["build", path.join(workspaceRoot, "collections", "music.json"), jekyllRoot],
+      argv: [
+        "build",
+        "--target",
+        "jekyll",
+        path.join(workspaceRoot, "collections", "music.json"),
+        jekyllRoot
+      ],
       cwd: workspaceRoot,
       output
     });
@@ -43,7 +97,7 @@ describe("gridgen build", () => {
     );
   });
 
-  it("builds with the poster layout option", async () => {
+  it("builds explicit Jekyll output with the default poster layout", async () => {
     const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
     const jekyllRoot = await makeTemporaryDirectory("gridgen-build-jekyll-");
     await createAndStoreRenderableDraft(workspaceRoot, "Music", "album-a.png");
@@ -51,8 +105,8 @@ describe("gridgen build", () => {
     const exitCode = await runGridgenCli({
       argv: [
         "build",
-        "--layout",
-        "poster",
+        "--target",
+        "jekyll",
         path.join(workspaceRoot, "collections", "music.json"),
         jekyllRoot
       ],
@@ -76,6 +130,33 @@ describe("gridgen build", () => {
     );
   });
 
+  it("builds explicit classic layout output", async () => {
+    const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
+    const jekyllRoot = await makeTemporaryDirectory("gridgen-build-jekyll-");
+    await createAndStoreRenderableDraft(workspaceRoot, "Music", "album-a.png");
+    const output = createCliOutput();
+    const exitCode = await runGridgenCli({
+      argv: [
+        "build",
+        "--target",
+        "jekyll",
+        "--layout",
+        "classic",
+        path.join(workspaceRoot, "collections", "music.json"),
+        jekyllRoot
+      ],
+      cwd: workspaceRoot,
+      output
+    });
+    const generatedInclude = await fs.readFile(
+      path.join(jekyllRoot, "_includes", "gridgen", "music.html"),
+      "utf8"
+    );
+
+    expect(exitCode).toBe(0);
+    expect(generatedInclude).toContain("gridgen-collection--classic");
+  });
+
   it("rejects unknown build layouts", async () => {
     const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
     const output = createCliOutput();
@@ -89,6 +170,19 @@ describe("gridgen build", () => {
     expect(output.stderr.join("\n")).toContain("Layout must be either classic or poster.");
   });
 
+  it("rejects unknown build targets", async () => {
+    const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
+    const output = createCliOutput();
+    const exitCode = await runGridgenCli({
+      argv: ["build", "--target", "unknown", workspaceRoot, workspaceRoot],
+      cwd: workspaceRoot,
+      output
+    });
+
+    expect(exitCode).toBe(1);
+    expect(output.stderr.join("\n")).toContain("Target must be either astro-react or jekyll.");
+  });
+
   it("builds every collection in a source workspace", async () => {
     const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
     const jekyllRoot = await makeTemporaryDirectory("gridgen-build-jekyll-");
@@ -98,7 +192,7 @@ describe("gridgen build", () => {
     await fs.writeFile(path.join(jekyllRoot, "assets", "gridgen", "music", "stale.webp"), "stale");
     const output = createCliOutput();
     const exitCode = await runGridgenCli({
-      argv: ["build", workspaceRoot, jekyllRoot],
+      argv: ["build", "--target", "jekyll", workspaceRoot, jekyllRoot],
       cwd: workspaceRoot,
       output
     });
@@ -143,7 +237,7 @@ describe("gridgen build", () => {
     await writeCollectionFile({ collection: invalidCollection, workspaceRoot });
     const output = createCliOutput();
     const exitCode = await runGridgenCli({
-      argv: ["build", workspaceRoot, jekyllRoot],
+      argv: ["build", "--target", "jekyll", workspaceRoot, jekyllRoot],
       cwd: workspaceRoot,
       output
     });
@@ -170,7 +264,55 @@ describe("gridgen build", () => {
     expect(exitCode).toBe(1);
     expect(output.stdout).toEqual([]);
     expect(output.stderr.join("\n")).toContain("asset.missingFile");
-    await expectMissing(path.join(jekyllRoot, "_includes", "gridgen", "music.html"));
+    await expectMissing(path.join(jekyllRoot, "src", "gridgen", "music.json"));
+  });
+
+  it("does not write text outputs when image processing rejects an existing source image", async () => {
+    const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
+    const astroRoot = await makeTemporaryDirectory("gridgen-build-astro-");
+    const collection = createRenderableDraft("Music", "bad.png");
+    const output = createCliOutput();
+
+    await writeCollectionFile({ collection, workspaceRoot });
+    await storeSourceImage({
+      collectionId: collection.id,
+      contents: new TextEncoder().encode("not an image"),
+      sourceFileName: "bad.png",
+      workspaceRoot
+    });
+
+    const exitCode = await runGridgenCli({
+      argv: ["build", workspaceRoot, astroRoot],
+      cwd: workspaceRoot,
+      output
+    });
+
+    expect(exitCode).toBe(1);
+    expect(output.stdout).toEqual([]);
+    expect(output.stderr.join("\n")).toContain("asset.unsupportedType");
+    await expectMissing(path.join(astroRoot, "src", "gridgen", "music.json"));
+  });
+
+  it("reports stale generated asset cleanup failures without claiming success", async () => {
+    const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
+    const astroRoot = await makeTemporaryDirectory("gridgen-build-astro-");
+    const collection = unwrapOk(createCollectionDraft({ title: "Music" }));
+    const conflictingCleanupPath = path.join(astroRoot, "public", "gridgen", "assets", "music");
+    const output = createCliOutput();
+
+    await writeCollectionFile({ collection, workspaceRoot });
+    await fs.mkdir(path.dirname(conflictingCleanupPath), { recursive: true });
+    await fs.writeFile(conflictingCleanupPath, "not a directory");
+
+    const exitCode = await runGridgenCli({
+      argv: ["build", workspaceRoot, astroRoot],
+      cwd: workspaceRoot,
+      output
+    });
+
+    expect(exitCode).toBe(1);
+    expect(output.stdout).toEqual([]);
+    expect(output.stderr.join("\n")).toContain("filesystem.readFailed");
   });
 
   it("reports invalid build collection JSON before planning output", async () => {
@@ -182,7 +324,7 @@ describe("gridgen build", () => {
     await fs.writeFile(path.join(workspaceRoot, "collections", "music.json"), "{");
 
     const exitCode = await runGridgenCli({
-      argv: ["build", workspaceRoot, jekyllRoot],
+      argv: ["build", "--target", "jekyll", workspaceRoot, jekyllRoot],
       cwd: workspaceRoot,
       output
     });
@@ -202,7 +344,7 @@ describe("gridgen build", () => {
     });
 
     const exitCode = await runGridgenCli({
-      argv: ["build", workspaceRoot, jekyllRoot],
+      argv: ["build", "--target", "jekyll", workspaceRoot, jekyllRoot],
       cwd: workspaceRoot,
       output
     });

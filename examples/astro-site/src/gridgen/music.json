@@ -1,0 +1,50 @@
+{
+  "id": "music",
+  "layout": "poster",
+  "renderDataVersion": 1,
+  "sections": [
+    {
+      "id": "s-tier",
+      "items": [
+        {
+          "description": "Focused, immediate, and easy to recommend.",
+          "image": {
+            "alt": "Album A cover",
+            "src": "/gridgen/assets/music/album-a.webp"
+          },
+          "link": "https://example.com/album-a",
+          "title": "Album A",
+          "id": "album-a"
+        },
+        {
+          "description": "A dependable starting point for the style.",
+          "image": {
+            "alt": "Album B cover",
+            "src": "/gridgen/assets/music/album-b.webp"
+          },
+          "link": "https://example.com/album-b",
+          "title": "Album B",
+          "id": "album-b"
+        }
+      ],
+      "name": "S Tier"
+    },
+    {
+      "id": "a-tier",
+      "items": [
+        {
+          "description": "Worth including for comparison and range.",
+          "image": {
+            "alt": "Album C cover",
+            "src": "/gridgen/assets/music/album-c.webp"
+          },
+          "link": "https://example.com/album-c",
+          "title": "Album C",
+          "id": "album-c"
+        }
+      ],
+      "name": "A Tier"
+    }
+  ],
+  "title": "Music"
+}

@@ -76,6 +76,29 @@ export interface JekyllOutputPaths {
 }
 
 /**
+ * Planned Astro React output paths owned by Gridgen.
+ *
+ * @property astroRoot Validated Astro project root.
+ * @property collectionAssetDirectory Per-collection generated public asset directory.
+ * @property collectionDataFile Generated render-data JSON path for one collection.
+ * @property componentFile Reusable generated React component path.
+ * @property publicAssetsDirectory Root generated public asset directory.
+ * @property publicGridgenDirectory Root public Gridgen directory.
+ * @property sharedStylesheetFile Reusable generated stylesheet path.
+ * @property srcGridgenDirectory Source directory for generated importable Astro assets.
+ */
+export interface AstroReactOutputPaths {
+  readonly astroRoot: AbsolutePath;
+  readonly collectionAssetDirectory: PlannedPath;
+  readonly collectionDataFile: PlannedPath;
+  readonly componentFile: PlannedPath;
+  readonly publicAssetsDirectory: PlannedPath;
+  readonly publicGridgenDirectory: PlannedPath;
+  readonly sharedStylesheetFile: PlannedPath;
+  readonly srcGridgenDirectory: PlannedPath;
+}
+
+/**
  * Input for planning source workspace paths.
  *
  * @property collectionId Stable collection identifier.
@@ -95,6 +118,17 @@ export interface SourceWorkspacePathsInput {
 export interface JekyllOutputPathsInput {
   readonly collectionId: CollectionId;
   readonly jekyllRoot: string;
+}
+
+/**
+ * Input for planning Astro React output paths.
+ *
+ * @property astroRoot Absolute Astro project root path.
+ * @property collectionId Stable collection identifier.
+ */
+export interface AstroReactOutputPathsInput {
+  readonly astroRoot: string;
+  readonly collectionId: CollectionId;
 }
 
 /**
@@ -200,6 +234,46 @@ export function planJekyllOutputPaths(
     includesDirectory: createPlannedPath(jekyllRoot.value, ["_includes", "gridgen"]),
     jekyllRoot: jekyllRoot.value,
     sharedStylesheetFile: createPlannedPath(jekyllRoot.value, ["assets", "gridgen", "gridgen.css"])
+  });
+}
+
+/**
+ * Plans Astro React output paths for one collection without touching the filesystem.
+ *
+ * @param input Astro React output planning input.
+ * @returns Planned Astro React output paths or a structured path failure.
+ */
+export function planAstroReactOutputPaths(
+  input: AstroReactOutputPathsInput
+): Result<AstroReactOutputPaths, GridgenError> {
+  const astroRoot = parseAbsolutePath(input.astroRoot, "astroRoot");
+
+  if (!astroRoot.ok) {
+    return astroRoot;
+  }
+
+  return ok({
+    astroRoot: astroRoot.value,
+    collectionAssetDirectory: createPlannedPath(astroRoot.value, [
+      "public",
+      "gridgen",
+      "assets",
+      input.collectionId.value
+    ]),
+    collectionDataFile: createPlannedPath(astroRoot.value, [
+      "src",
+      "gridgen",
+      `${input.collectionId.value}.json`
+    ]),
+    componentFile: createPlannedPath(astroRoot.value, [
+      "src",
+      "gridgen",
+      "GridgenRecommendationGrid.tsx"
+    ]),
+    publicAssetsDirectory: createPlannedPath(astroRoot.value, ["public", "gridgen", "assets"]),
+    publicGridgenDirectory: createPlannedPath(astroRoot.value, ["public", "gridgen"]),
+    sharedStylesheetFile: createPlannedPath(astroRoot.value, ["src", "gridgen", "gridgen.css"]),
+    srcGridgenDirectory: createPlannedPath(astroRoot.value, ["src", "gridgen"])
   });
 }
 

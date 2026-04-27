@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,7 +21,7 @@ const jsonContentTypePrefix = "application/json";
 const multipartContentTypePrefix = "multipart/form-data";
 const sessionTokenHeaderName = "x-gridgen-session-token";
 const serverDirectory = dirname(fileURLToPath(import.meta.url));
-const webDistDirectory = join(serverDirectory, "../../../apps/web/dist");
+const webDistDirectory = resolveWebDistDirectory();
 
 /**
  * Default JSON request body limit for local API requests.
@@ -272,6 +273,17 @@ function registerWebAppRoutes(app: Hono): void {
   app.get("/assets/:assetName", async (context) =>
     serveWebDistFile(`assets/${context.req.param("assetName")}`)
   );
+}
+
+function resolveWebDistDirectory(): string {
+  const packagedWebDistDirectory = join(serverDirectory, "web");
+  const sourceWebDistDirectory = join(serverDirectory, "../../../apps/web/dist");
+
+  if (existsSync(packagedWebDistDirectory)) {
+    return packagedWebDistDirectory;
+  }
+
+  return sourceWebDistDirectory;
 }
 
 async function serveWebDistFile(relativePath: string): Promise<Response> {

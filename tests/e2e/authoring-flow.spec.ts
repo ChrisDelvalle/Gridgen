@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { expect, test } from "@playwright/test";
 
 const sourceWorkspaceRoot = join(process.cwd(), "tmp/e2e-source");
-const jekyllRoot = join(process.cwd(), "tmp/e2e-jekyll");
+const astroRoot = join(process.cwd(), "tmp/e2e-astro");
 
 test("authors, crops, previews, and builds a collection", async ({ page, context }) => {
   await page.goto("/");
@@ -47,29 +47,22 @@ test("authors, crops, previews, and builds a collection", async ({ page, context
   await expect(previewPage.locator(".gridgen-collection--poster")).toBeVisible();
   await expect(previewPage.getByText("Album A")).toBeVisible();
 
-  execFileSync(
-    "bun",
-    ["packages/cli/src/bin.ts", "build", "--layout", "poster", sourceWorkspaceRoot, jekyllRoot],
-    {
-      cwd: process.cwd(),
-      stdio: "pipe"
-    }
-  );
+  execFileSync("bun", ["packages/cli/src/bin.ts", "build", sourceWorkspaceRoot, astroRoot], {
+    cwd: process.cwd(),
+    stdio: "pipe"
+  });
 
   const collectionFileName = await findSingleCollectionFile();
   const collectionId = collectionFileName.slice(0, -".json".length);
   const savedCollection = readSavedCollection(
     JSON.parse(await readFile(join(sourceWorkspaceRoot, "collections", collectionFileName), "utf8"))
   );
-  const generatedInclude = await readFile(
-    join(jekyllRoot, `_includes/gridgen/${collectionId}.html`),
-    "utf8"
-  );
+  const generatedData = await readFile(join(astroRoot, `src/gridgen/${collectionId}.json`), "utf8");
 
   expect(savedCollection.sections[0].items[0].image.crop.width).toBeLessThanOrEqual(100);
-  expect(generatedInclude).toContain("Album A");
-  expect(generatedInclude).toContain("gridgen-collection--poster");
-  expect(generatedInclude).not.toContain("background:#08080a");
+  expect(generatedData).toContain("Album A");
+  expect(generatedData).toContain('"layout": "poster"');
+  expect(generatedData).toContain(`/gridgen/assets/${collectionId}/`);
 });
 
 test("supports redesigned shell, sidebar, menus, and responsive editor surfaces", async ({

@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "gridgen",
+      "dependencies": {
+        "sharp": "^0.34.5",
+      },
       "devDependencies": {
         "@eslint/js": "10.0.1",
         "@gridgen/cli": "workspace:*",

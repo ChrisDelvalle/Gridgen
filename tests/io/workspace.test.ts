@@ -3,9 +3,11 @@ import * as os from "node:os";
 import * as path from "node:path";
 
 import {
+  type AstroReactBuildPlan,
   createCollectionDraft,
   type JekyllBuildPlan,
   parseDraftCollection,
+  planAstroReactBuild,
   planJekyllBuild,
   type Result,
   toRenderableCollection
@@ -20,7 +22,7 @@ import {
   validateSourceAssets,
   writeCollectionFile,
   writeGeneratedAsset,
-  writeJekyllTextOutputs
+  writePlannedTextOutputs
 } from "@gridgen/io";
 import { describe, expect, it } from "bun:test";
 
@@ -288,7 +290,7 @@ describe("generated Jekyll output IO", () => {
   it("writes planned include and CSS text outputs atomically", async () => {
     const jekyllRoot = await makeTemporaryDirectory();
     const plan = createBuildPlan(jekyllRoot);
-    const result = await writeJekyllTextOutputs({ plan });
+    const result = await writePlannedTextOutputs({ outputs: [plan.htmlOutput, plan.cssOutput] });
 
     expect(result.ok).toBe(true);
     const include = await fs.readFile(
@@ -310,7 +312,7 @@ describe("generated Jekyll output IO", () => {
 
     await fs.writeFile(path.join(jekyllRoot, "_includes"), "not a directory");
 
-    const result = await writeJekyllTextOutputs({ plan });
+    const result = await writePlannedTextOutputs({ outputs: [plan.htmlOutput, plan.cssOutput] });
 
     expect(result.ok).toBe(false);
   });
@@ -367,6 +369,33 @@ describe("generated Jekyll output IO", () => {
     expect(result.ok).toBe(false);
   });
 
+  it("writes Astro React text outputs and public generated assets", async () => {
+    const astroRoot = await makeTemporaryDirectory();
+    const plan = createAstroBuildPlan(astroRoot);
+    const imageOutput = plan.imageOutputs[0]?.outputPath;
+
+    if (imageOutput === undefined) {
+      throw new Error("Expected image output.");
+    }
+
+    const textResult = await writePlannedTextOutputs({
+      outputs: [plan.componentOutput, plan.cssOutput, plan.dataOutput]
+    });
+    const imageResult = await writeGeneratedAsset({
+      contents: new Uint8Array([1, 2, 3]),
+      outputPath: imageOutput
+    });
+
+    expect(textResult.ok).toBe(true);
+    expect(imageResult.ok).toBe(true);
+    await expectPresent(path.join(astroRoot, "src", "gridgen", "GridgenRecommendationGrid.tsx"));
+    await expectPresent(path.join(astroRoot, "src", "gridgen", "gridgen.css"));
+    await expectPresent(path.join(astroRoot, "src", "gridgen", "music.json"));
+    await expectPresent(
+      path.join(astroRoot, "public", "gridgen", "assets", "music", "album-a.webp")
+    );
+  });
+
   it("validates source assets and reports missing files", async () => {
     const workspaceRoot = await makeTemporaryDirectory();
     const collection = unwrapOk(createCollectionDraft({ title: "Music" }));
@@ -406,7 +435,10 @@ describe("generated Jekyll output IO", () => {
     await fs.writeFile(path.join(plan.cleanupDirectory.absolutePath.value, "old.webp"), "old");
     await fs.mkdir(path.join(plan.cleanupDirectory.absolutePath.value, "nested"));
 
-    const result = await removeStaleGeneratedAssets({ plan });
+    const result = await removeStaleGeneratedAssets({
+      cleanupDirectory: plan.cleanupDirectory,
+      imageOutputs: plan.imageOutputs
+    });
 
     expect(result.ok).toBe(true);
     await expectPresent(expectedImagePath);
@@ -421,7 +453,10 @@ describe("generated Jekyll output IO", () => {
     await fs.mkdir(path.dirname(plan.cleanupDirectory.absolutePath.value), { recursive: true });
     await fs.writeFile(plan.cleanupDirectory.absolutePath.value, "not a directory");
 
-    const result = await removeStaleGeneratedAssets({ plan });
+    const result = await removeStaleGeneratedAssets({
+      cleanupDirectory: plan.cleanupDirectory,
+      imageOutputs: plan.imageOutputs
+    });
 
     expect(result.ok).toBe(false);
   });
@@ -429,7 +464,10 @@ describe("generated Jekyll output IO", () => {
   it("treats missing generated cleanup directories as already clean", async () => {
     const jekyllRoot = await makeTemporaryDirectory();
     const plan = createBuildPlan(jekyllRoot);
-    const result = await removeStaleGeneratedAssets({ plan });
+    const result = await removeStaleGeneratedAssets({
+      cleanupDirectory: plan.cleanupDirectory,
+      imageOutputs: plan.imageOutputs
+    });
 
     expect(result.ok).toBe(true);
   });
@@ -442,7 +480,10 @@ describe("generated Jekyll output IO", () => {
     await fs.writeFile(path.join(plan.cleanupDirectory.absolutePath.value, "old.webp"), "old");
     await fs.chmod(plan.cleanupDirectory.absolutePath.value, 0o500);
 
-    const result = await removeStaleGeneratedAssets({ plan });
+    const result = await removeStaleGeneratedAssets({
+      cleanupDirectory: plan.cleanupDirectory,
+      imageOutputs: plan.imageOutputs
+    });
 
     await fs.chmod(plan.cleanupDirectory.absolutePath.value, 0o700);
 
@@ -483,6 +524,15 @@ function createBuildPlan(jekyllRoot: string): JekyllBuildPlan {
   const renderable = unwrapOk(toRenderableCollection(draft));
 
   return unwrapOk(planJekyllBuild({ collection: renderable, jekyllRoot }));
+}
+
+function createAstroBuildPlan(astroRoot: string): AstroReactBuildPlan {
+  const draft = unwrapOk(
+    parseDraftCollection(createPersistedRenderableCollection("https://example.com/a"))
+  );
+  const renderable = unwrapOk(toRenderableCollection(draft));
+
+  return unwrapOk(planAstroReactBuild({ astroRoot, collection: renderable }));
 }
 
 function createPersistedRenderableCollection(link: string): unknown {

@@ -4,6 +4,7 @@ import {
   type GridgenError,
   GridgenErrorCode,
   parseRenderableCollection,
+  planAstroReactBuild,
   planJekyllBuild,
   type RenderableCollection,
   type Result
@@ -102,6 +103,58 @@ describe("build planner", () => {
     expect(
       plan.imageOutputs.map((imageOutput) => imageOutput.outputPath.relativePath.value)
     ).toEqual(["assets/gridgen/music/album-a.webp", "assets/gridgen/music/album-b.webp"]);
+  });
+
+  it("plans Astro React component, stylesheet, render data, images, and public URLs", () => {
+    const collection = createRenderableCollection();
+    const astroRoot = path.join(path.sep, "tmp", "astro-site");
+    const plan = unwrapOk(
+      planAstroReactBuild({
+        astroRoot,
+        collection
+      })
+    );
+
+    expect(plan.componentOutput.outputPath.relativePath.value).toBe(
+      "src/gridgen/GridgenRecommendationGrid.tsx"
+    );
+    expect(plan.cssOutput.outputPath.relativePath.value).toBe("src/gridgen/gridgen.css");
+    expect(plan.dataOutput.outputPath.relativePath.value).toBe("src/gridgen/music.json");
+    expect(plan.cleanupDirectory.relativePath.value).toBe("public/gridgen/assets/music");
+    expect(
+      plan.imageOutputs.map((imageOutput) => imageOutput.outputPath.relativePath.value)
+    ).toEqual([
+      "public/gridgen/assets/music/album-a.webp",
+      "public/gridgen/assets/music/album-b.webp"
+    ]);
+    expect(plan.dataOutput.contents).toContain('"renderDataVersion": 1');
+    expect(plan.dataOutput.contents).toContain('"layout": "poster"');
+    expect(plan.dataOutput.contents).toContain('"/gridgen/assets/music/album-a.webp"');
+    expect(plan.dataOutput.contents).not.toContain("sourceFileName");
+    expect(plan.dataOutput.contents).not.toContain('"crop"');
+    expect(plan.componentOutput.contents).toContain("export default GridgenRecommendationGrid;");
+    expect(plan.componentOutput.contents).not.toContain('import "./gridgen.css"');
+  });
+
+  it("plans explicit Astro React classic layout render data", () => {
+    const plan = unwrapOk(
+      planAstroReactBuild({
+        astroRoot: path.join(path.sep, "tmp", "astro-site"),
+        collection: createRenderableCollection(),
+        layout: "classic"
+      })
+    );
+
+    expect(plan.dataOutput.contents).toContain('"layout": "classic"');
+  });
+
+  it("fails before any write when the Astro root is unsafe", () => {
+    const result = planAstroReactBuild({
+      astroRoot: "./astro-site",
+      collection: createRenderableCollection()
+    });
+
+    expect(unwrapErr(result).code).toBe(GridgenErrorCode.PathUnsafe);
   });
 });
 

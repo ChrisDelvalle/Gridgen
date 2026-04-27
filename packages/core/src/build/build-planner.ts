@@ -9,7 +9,9 @@ import type {
 } from "../collection/types";
 import type { GridgenError } from "../errors/errors";
 import {
+  type AstroReactOutputPaths,
   type JekyllOutputPaths,
+  planAstroReactOutputPaths,
   planJekyllOutputPaths,
   type PlannedPath
 } from "../paths/path-planning";
@@ -17,7 +19,9 @@ import {
   createJekyllAssetUrlExpression,
   type GridRenderLayout,
   type JekyllAssetUrlExpression,
+  renderAstroReactComponent,
   renderGridCss,
+  renderGridDataJson,
   renderGridHtml,
   type RenderGridItem,
   type RenderGridSection
@@ -53,6 +57,11 @@ export interface PlannedImageOutput {
 }
 
 /**
+ * CLI/static build output target.
+ */
+export type GridgenBuildTarget = "astro-react" | "jekyll";
+
+/**
  * Input used to plan a Jekyll build for one renderable collection.
  *
  * @property collection Renderable source collection.
@@ -62,6 +71,19 @@ export interface PlannedImageOutput {
 export interface JekyllBuildInput {
   readonly collection: RenderableCollection;
   readonly jekyllRoot: string;
+  readonly layout?: GridRenderLayout;
+}
+
+/**
+ * Input used to plan an Astro React build for one renderable collection.
+ *
+ * @property astroRoot Absolute Astro project root path.
+ * @property collection Renderable source collection.
+ * @property layout Optional static presentation layout.
+ */
+export interface AstroReactBuildInput {
+  readonly astroRoot: string;
+  readonly collection: RenderableCollection;
   readonly layout?: GridRenderLayout;
 }
 
@@ -82,6 +104,27 @@ export interface JekyllBuildPlan {
   readonly htmlOutput: PlannedTextOutput;
   readonly imageOutputs: readonly PlannedImageOutput[];
   readonly paths: JekyllOutputPaths;
+}
+
+/**
+ * Deterministic Astro React build manifest for one renderable collection.
+ *
+ * @property cleanupDirectory Gridgen-owned public collection asset directory eligible for stale cleanup.
+ * @property collectionId Stable collection ID.
+ * @property componentOutput Reusable React component output.
+ * @property cssOutput Reusable stylesheet output.
+ * @property dataOutput Collection render-data JSON output.
+ * @property imageOutputs Deterministic generated image outputs.
+ * @property paths Planned owned Astro output paths for this collection.
+ */
+export interface AstroReactBuildPlan {
+  readonly cleanupDirectory: PlannedPath;
+  readonly collectionId: CollectionId;
+  readonly componentOutput: PlannedTextOutput;
+  readonly cssOutput: PlannedTextOutput;
+  readonly dataOutput: PlannedTextOutput;
+  readonly imageOutputs: readonly PlannedImageOutput[];
+  readonly paths: AstroReactOutputPaths;
 }
 
 type RenderableSectionInput = RenderableCollection["sections"][number];
@@ -121,7 +164,7 @@ export function planJekyllBuild(input: JekyllBuildInput): Result<JekyllBuildPlan
     htmlOutput: {
       contents: renderGridHtml({
         collectionId: input.collection.id,
-        layout: input.layout ?? "classic",
+        layout: input.layout ?? "poster",
         sections: plannedAssets.renderSections,
         stylesheetHref,
         title: input.collection.title
@@ -133,16 +176,68 @@ export function planJekyllBuild(input: JekyllBuildInput): Result<JekyllBuildPlan
   });
 }
 
+/**
+ * Plans all Astro React outputs for one renderable collection without touching the filesystem.
+ *
+ * @param input Build planning input.
+ * @returns Deterministic Astro React build manifest or a structured failure.
+ */
+export function planAstroReactBuild(
+  input: AstroReactBuildInput
+): Result<AstroReactBuildPlan, GridgenError> {
+  const paths = planAstroReactOutputPaths({
+    astroRoot: input.astroRoot,
+    collectionId: input.collection.id
+  });
+
+  if (!paths.ok) {
+    return paths;
+  }
+
+  const plannedAssets = planCollectionAssets(
+    paths.value.collectionAssetDirectory,
+    input.collection,
+    createAstroPublicAssetUrl
+  );
+  const renderInput = {
+    collectionId: input.collection.id,
+    layout: input.layout ?? "poster",
+    sections: plannedAssets.renderSections,
+    stylesheetHref: { value: "/gridgen.css" },
+    title: input.collection.title
+  };
+
+  return ok({
+    cleanupDirectory: paths.value.collectionAssetDirectory,
+    collectionId: input.collection.id,
+    componentOutput: {
+      contents: renderAstroReactComponent(),
+      outputPath: paths.value.componentFile
+    },
+    cssOutput: {
+      contents: renderGridCss(),
+      outputPath: paths.value.sharedStylesheetFile
+    },
+    dataOutput: {
+      contents: renderGridDataJson(renderInput),
+      outputPath: paths.value.collectionDataFile
+    },
+    imageOutputs: plannedAssets.imageOutputs,
+    paths: paths.value
+  });
+}
+
 function planCollectionAssets(
   collectionAssetDirectory: PlannedPath,
-  collection: RenderableCollection
+  collection: RenderableCollection,
+  createOutputUrl: (relativeImagePath: string) => JekyllAssetUrlExpression = createJekyllOutputUrl
 ): {
   readonly imageOutputs: readonly PlannedImageOutput[];
   readonly renderSections: readonly RenderGridSection[];
 } {
   const imageOutputs: PlannedImageOutput[] = [];
   const renderSections = collection.sections.map((section) => {
-    const sectionPlan = planSectionAssets(collectionAssetDirectory, section);
+    const sectionPlan = planSectionAssets(collectionAssetDirectory, section, createOutputUrl);
 
     imageOutputs.push(...sectionPlan.imageOutputs);
 
@@ -157,14 +252,15 @@ function planCollectionAssets(
 
 function planSectionAssets(
   collectionAssetDirectory: PlannedPath,
-  section: RenderableSectionInput
+  section: RenderableSectionInput,
+  createOutputUrl: (relativeImagePath: string) => JekyllAssetUrlExpression
 ): {
   readonly imageOutputs: readonly PlannedImageOutput[];
   readonly renderSection: RenderGridSection;
 } {
   const imageOutputs: PlannedImageOutput[] = [];
   const renderItems = section.items.map((item) => {
-    const itemPlan = planItemAssets(collectionAssetDirectory, item);
+    const itemPlan = planItemAssets(collectionAssetDirectory, item, createOutputUrl);
 
     if (itemPlan.imageOutput !== undefined) {
       imageOutputs.push(itemPlan.imageOutput);
@@ -185,12 +281,13 @@ function planSectionAssets(
 
 function planItemAssets(
   collectionAssetDirectory: PlannedPath,
-  item: RenderableItemInput
+  item: RenderableItemInput,
+  createOutputUrl: (relativeImagePath: string) => JekyllAssetUrlExpression
 ): {
   readonly imageOutput?: PlannedImageOutput;
   readonly renderItem: RenderGridItem;
 } {
-  const plannedImage = planOptionalItemImage(collectionAssetDirectory, item);
+  const plannedImage = planOptionalItemImage(collectionAssetDirectory, item, createOutputUrl);
 
   return {
     ...(plannedImage === undefined ? {} : { imageOutput: plannedImage.imageOutput }),
@@ -230,9 +327,26 @@ function resolveImageAltText(item: RenderableItemInput): string {
   return trimmedAlt.length === 0 ? (item.title?.value ?? "") : trimmedAlt;
 }
 
+function createJekyllOutputUrl(relativeImagePath: string): JekyllAssetUrlExpression {
+  return createJekyllAssetUrlExpression({
+    value: `/${relativeImagePath}`
+  });
+}
+
+function createAstroPublicAssetUrl(relativeImagePath: string): JekyllAssetUrlExpression {
+  const publicPrefix = "public/";
+
+  return {
+    value: relativeImagePath.startsWith(publicPrefix)
+      ? `/${relativeImagePath.slice(publicPrefix.length)}`
+      : `/${relativeImagePath}`
+  };
+}
+
 function planOptionalItemImage(
   collectionAssetDirectory: PlannedPath,
-  item: RenderableItemInput
+  item: RenderableItemInput,
+  createOutputUrl: (relativeImagePath: string) => JekyllAssetUrlExpression
 ):
   | {
       readonly imageOutput: PlannedImageOutput;
@@ -248,9 +362,7 @@ function planOptionalItemImage(
     collectionAssetDirectory.relativePath.value,
     imageFileName
   );
-  const outputUrl = createJekyllAssetUrlExpression({
-    value: `/${relativeImagePath}`
-  });
+  const outputUrl = createOutputUrl(relativeImagePath);
 
   return {
     imageOutput: {

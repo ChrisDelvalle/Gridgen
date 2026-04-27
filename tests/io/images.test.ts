@@ -28,7 +28,11 @@ describe("image processing", () => {
     const workspaceRoot = await makeTemporaryDirectory("gridgen-image-workspace-");
     const jekyllRoot = await makeTemporaryDirectory("gridgen-image-jekyll-");
     const plan = await createImagePlan(workspaceRoot, jekyllRoot, createPng());
-    const result = await processPlannedImages({ plan, workspaceRoot });
+    const result = await processPlannedImages({
+      collectionId: plan.collectionId,
+      imageOutputs: plan.imageOutputs,
+      workspaceRoot
+    });
 
     expect(result.ok).toBe(true);
 
@@ -52,7 +56,11 @@ describe("image processing", () => {
 
     await fs.truncate(sourcePath, maxSourceImageBytes + 1);
 
-    const result = await processPlannedImages({ plan, workspaceRoot });
+    const result = await processPlannedImages({
+      collectionId: plan.collectionId,
+      imageOutputs: plan.imageOutputs,
+      workspaceRoot
+    });
 
     expect(unwrapErr(result).error.code).toBe(GridgenErrorCode.AssetTooLarge);
   });
@@ -66,7 +74,11 @@ describe("image processing", () => {
     await fs.rm(sourcePath);
     await fs.mkdir(sourcePath);
 
-    const result = await processPlannedImages({ plan, workspaceRoot });
+    const result = await processPlannedImages({
+      collectionId: plan.collectionId,
+      imageOutputs: plan.imageOutputs,
+      workspaceRoot
+    });
 
     expect(unwrapErr(result).error.code).toBe(GridgenErrorCode.AssetMissingFile);
   });
@@ -75,7 +87,11 @@ describe("image processing", () => {
     const workspaceRoot = await makeTemporaryDirectory("gridgen-image-workspace-");
     const jekyllRoot = await makeTemporaryDirectory("gridgen-image-jekyll-");
     const plan = await createImagePlan(workspaceRoot, jekyllRoot, createPng());
-    const result = await processPlannedImages({ plan, workspaceRoot: "relative" });
+    const result = await processPlannedImages({
+      collectionId: plan.collectionId,
+      imageOutputs: plan.imageOutputs,
+      workspaceRoot: "relative"
+    });
 
     expect(unwrapErr(result).error.code).toBe(GridgenErrorCode.PathUnsafe);
   });
@@ -138,7 +154,11 @@ describe("image processing", () => {
       jekyllRoot,
       new TextEncoder().encode("not an image")
     );
-    const result = await processPlannedImages({ plan, workspaceRoot });
+    const result = await processPlannedImages({
+      collectionId: plan.collectionId,
+      imageOutputs: plan.imageOutputs,
+      workspaceRoot
+    });
 
     expect(unwrapErr(result).error.code).toBe(GridgenErrorCode.AssetUnsupportedType);
   });
@@ -151,7 +171,11 @@ describe("image processing", () => {
       jekyllRoot,
       new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"></svg>')
     );
-    const result = await processPlannedImages({ plan, workspaceRoot });
+    const result = await processPlannedImages({
+      collectionId: plan.collectionId,
+      imageOutputs: plan.imageOutputs,
+      workspaceRoot
+    });
 
     expect(unwrapErr(result).error.code).toBe(GridgenErrorCode.AssetUnsupportedType);
   });
@@ -177,8 +201,8 @@ describe("image processing", () => {
       }
     };
     const result = await processPlannedImage({
+      collectionId: plan.collectionId,
       imageOutput: invalidImageOutput,
-      plan,
       workspaceRoot
     });
 

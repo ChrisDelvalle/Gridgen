@@ -3,19 +3,19 @@ import { join } from "node:path";
 
 const temporaryRoot = join(process.cwd(), "tmp");
 const sourceRoot = join(temporaryRoot, "e2e-source");
-const jekyllRoot = join(temporaryRoot, "e2e-jekyll");
+const astroRoot = join(temporaryRoot, "e2e-astro");
 
 await rm(sourceRoot, {
   force: true,
   recursive: true
 });
-await rm(jekyllRoot, {
+await rm(astroRoot, {
   force: true,
   recursive: true
 });
 await mkdir(sourceRoot, {
   recursive: true
 });
-await mkdir(jekyllRoot, {
+await mkdir(astroRoot, {
   recursive: true
 });

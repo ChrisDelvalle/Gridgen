@@ -9,6 +9,7 @@ import {
   parseDraftLink,
   parseGridLink,
   parseSafeLocalLink,
+  planAstroReactOutputPaths,
   planChildPath,
   planJekyllOutputPaths,
   planSourceWorkspacePaths,
@@ -123,6 +124,24 @@ describe("path planning", () => {
     expect(result.collectionAssetDirectory.relativePath.value).toBe("assets/gridgen/music");
   });
 
+  it("plans Astro React output paths inside the selected site root", () => {
+    const astroRoot = path.join(path.sep, "tmp", "astro-site");
+    const result = unwrapOk(
+      planAstroReactOutputPaths({
+        astroRoot,
+        collectionId: { value: "music" }
+      })
+    );
+
+    expect(result.astroRoot).toEqual({ value: astroRoot });
+    expect(result.componentFile.relativePath.value).toBe(
+      "src/gridgen/GridgenRecommendationGrid.tsx"
+    );
+    expect(result.sharedStylesheetFile.relativePath.value).toBe("src/gridgen/gridgen.css");
+    expect(result.collectionDataFile.relativePath.value).toBe("src/gridgen/music.json");
+    expect(result.collectionAssetDirectory.relativePath.value).toBe("public/gridgen/assets/music");
+  });
+
   it("plans a validated child path inside a trusted root", () => {
     const root = unwrapOk(parseAbsolutePath(path.join(path.sep, "tmp", "gridgen-root")));
     const result = unwrapOk(
@@ -153,6 +172,14 @@ describe("path planning", () => {
         planJekyllOutputPaths({
           collectionId: { value: "music" },
           jekyllRoot: "./site"
+        })
+      ).code
+    ).toBe(GridgenErrorCode.PathUnsafe);
+    expect(
+      unwrapErr(
+        planAstroReactOutputPaths({
+          astroRoot: "./site",
+          collectionId: { value: "music" }
         })
       ).code
     ).toBe(GridgenErrorCode.PathUnsafe);

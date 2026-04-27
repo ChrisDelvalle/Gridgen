@@ -1,8 +1,19 @@
 {
   "name": "gridgen",
-  "private": true,
+  "version": "0.0.0",
+  "description": "Author and build opinionated recommendation grids for Astro and Jekyll.",
+  "license": "MIT",
+  "private": false,
   "packageManager": "bun@1.3.12",
   "type": "module",
+  "bin": {
+    "gridgen": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -26,10 +37,16 @@
     "coverage": "bun run test --coverage --coverage-reporter=text --coverage-reporter=lcov",
     "build": "bun --filter @gridgen/web build",
     "build:web": "bun --filter @gridgen/web build",
+    "build:package": "bun scripts/build-package.ts",
+    "package:pack": "bun run build:package && bun pm pack --destination tmp/package",
+    "package:verify": "bun scripts/verify-package.ts",
     "audit": "bun audit",
     "secrets": "gitleaks detect --source . --redact --no-banner",
     "check": "bun run typecheck && bun run lint && bun run format && bun run deadcode && bun run test && bun run build",
     "check:release": "bun run check && bun run coverage && bun run audit && bun run secrets"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

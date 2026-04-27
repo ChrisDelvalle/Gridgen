@@ -15,7 +15,7 @@ export {
   validateSourceAssets,
   writeCollectionFile,
   writeGeneratedAsset,
-  writeJekyllTextOutputs
+  writePlannedTextOutputs
 } from "./workspace";
 export type {
   DiscoverCollectionFilesInput,
@@ -30,5 +30,5 @@ export type {
   ValidateSourceAssetsInput,
   WriteCollectionFileInput,
   WriteGeneratedAssetInput,
-  WriteJekyllTextOutputsInput
+  WritePlannedTextOutputsInput
 } from "./workspace";
