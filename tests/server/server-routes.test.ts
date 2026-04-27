@@ -471,7 +471,9 @@ describe("server collection and preview routes", () => {
     expect(previewHtml).toContain("gridgen-collection--poster");
     expect(previewHtml).toContain("/preview/music/assets/album-a.webp");
     expect(previewHtml).toContain("/preview/gridgen.css");
-    expect(previewHtml).not.toContain('<h3 class="gridgen-section-title"');
+    expect(previewHtml).toContain(
+      '<h2 class="gridgen-section-title" id="gridgen-music-section-1">Section 1</h2>'
+    );
 
     const cssResponse = await server.app.request("http://127.0.0.1/preview/gridgen.css");
 

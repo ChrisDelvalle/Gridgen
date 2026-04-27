@@ -275,14 +275,14 @@ function prepareRenderItem(
 export function renderGridHtml(input: RenderGridInput): string {
   const collectionHeadingId = `gridgen-${input.collectionId.value}-title`;
   const sectionsHtml = input.sections
-    .map((section) => renderSection(input.collectionId, section, input.layout))
+    .map((section) => renderSection(input.collectionId, section))
     .join("");
 
   return [
     generatedFileComment,
     `<link rel="stylesheet" href="${escapeHtmlAttribute(input.stylesheetHref.value)}">`,
     `<section class="gridgen-collection gridgen-collection--${input.layout}" aria-labelledby="${escapeHtmlAttribute(collectionHeadingId)}">`,
-    `<header class="gridgen-header"><h2 class="gridgen-title" id="${escapeHtmlAttribute(collectionHeadingId)}">${escapeHtmlText(input.title.value)}</h2></header>`,
+    `<header class="gridgen-header"><h1 class="gridgen-title" id="${escapeHtmlAttribute(collectionHeadingId)}">${escapeHtmlText(input.title.value)}</h1></header>`,
     sectionsHtml,
     "</section>"
   ].join("");
@@ -368,7 +368,7 @@ export function renderGridCss(): string {
 }
 
 .gridgen-collection--poster {
-  --gridgen-poster-tile-min: 8.75rem;
+  --gridgen-poster-tile-size: clamp(7.5rem, 18vw, 11rem);
   background: transparent;
   color: inherit;
   gap: clamp(2.5rem, 5vw, 4.5rem);
@@ -379,43 +379,44 @@ export function renderGridCss(): string {
 
 .gridgen-collection--poster .gridgen-header {
   border-bottom: 0;
-  padding-bottom: 0;
+  padding-bottom: clamp(0.75rem, 2vw, 1.75rem);
   text-align: center;
 }
 
 .gridgen-collection--poster .gridgen-title {
   font-size: clamp(3rem, 10vw, 7.5rem);
   font-weight: 900;
-  line-height: 0.9;
+  line-height: 1;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   text-transform: uppercase;
 }
 
 .gridgen-collection--poster .gridgen-section {
   gap: clamp(1.75rem, 4vw, 4rem);
+  padding-top: clamp(0.5rem, 1.5vw, 1.5rem);
 }
 
 .gridgen-collection--poster .gridgen-section-title {
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  position: absolute;
-  white-space: nowrap;
-  width: 1px;
+  font-size: clamp(1.15rem, 2.4vw, 1.8rem);
+  font-weight: 900;
+  line-height: 1;
+  text-align: left;
+  text-transform: uppercase;
 }
 
 .gridgen-collection--poster .gridgen-grid {
   align-items: start;
   gap: clamp(2.5rem, 5vw, 4.25rem) clamp(1.5rem, 3vw, 2.25rem);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--gridgen-poster-tile-min)), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(0, var(--gridgen-poster-tile-size)));
+  justify-content: start;
 }
 
-.gridgen-collection--poster .gridgen-item {
+.gridgen-collection--poster .gridgen-item,
+.gridgen-collection--poster .gridgen-item-link {
   gap: 0;
   min-width: 0;
-}
-
-.gridgen-collection--poster .gridgen-item-link {
-  gap: 0.85rem;
+  width: var(--gridgen-poster-tile-size);
 }
 
 .gridgen-collection--poster .gridgen-item-image {
@@ -429,7 +430,7 @@ export function renderGridCss(): string {
 
 .gridgen-collection--poster .gridgen-item-title {
   font-size: 0.875rem;
-  font-style: italic;
+  font-style: normal;
   font-weight: 500;
   line-height: 1.15;
 }
@@ -440,28 +441,13 @@ export function renderGridCss(): string {
   opacity: 0.88;
 }
 
-@media (min-width: 48rem) {
-  .gridgen-collection--poster {
-    --gridgen-poster-tile-min: 10.5rem;
-  }
-}`;
+`;
 }
 
-function renderSection(
-  collectionId: CollectionId,
-  section: RenderGridSection,
-  layout: GridRenderLayout
-): string {
+function renderSection(collectionId: CollectionId, section: RenderGridSection): string {
   const sectionHeadingId = `gridgen-${collectionId.value}-${section.id.value}`;
   const itemsHtml = section.items.map(renderItem).join("");
-  const headingHtml =
-    layout === "poster"
-      ? ""
-      : `<h3 class="gridgen-section-title" id="${escapeHtmlAttribute(sectionHeadingId)}">${escapeHtmlText(section.name.value)}</h3>`;
-
-  if (layout === "poster") {
-    return `<section class="gridgen-section" aria-label="${escapeHtmlAttribute(section.name.value)}"><div class="gridgen-grid">${itemsHtml}</div></section>`;
-  }
+  const headingHtml = `<h2 class="gridgen-section-title" id="${escapeHtmlAttribute(sectionHeadingId)}">${escapeHtmlText(section.name.value)}</h2>`;
 
   return `<section class="gridgen-section" aria-labelledby="${escapeHtmlAttribute(sectionHeadingId)}">${headingHtml}<div class="gridgen-grid">${itemsHtml}</div></section>`;
 }

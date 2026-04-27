@@ -67,7 +67,9 @@ describe("gridgen build", () => {
     expect(exitCode).toBe(0);
     expect(output.stdout).toContain("wrote _includes/gridgen/music.html");
     expect(generatedInclude).toContain("gridgen-collection--poster");
-    expect(generatedInclude).not.toContain('<h3 class="gridgen-section-title"');
+    expect(generatedInclude).toContain(
+      '<h2 class="gridgen-section-title" id="gridgen-music-section-1">Section 1</h2>'
+    );
     await expectFileContains(
       path.join(jekyllRoot, "assets", "gridgen", "gridgen.css"),
       ".gridgen-collection--poster"

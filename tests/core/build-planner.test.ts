@@ -96,7 +96,9 @@ describe("build planner", () => {
     );
 
     expect(plan.htmlOutput.contents).toContain("gridgen-collection--poster");
-    expect(plan.htmlOutput.contents).not.toContain('<h3 class="gridgen-section-title"');
+    expect(plan.htmlOutput.contents).toContain(
+      '<h2 class="gridgen-section-title" id="gridgen-music-s-tier">S Tier</h2>'
+    );
     expect(
       plan.imageOutputs.map((imageOutput) => imageOutput.outputPath.relativePath.value)
     ).toEqual(["assets/gridgen/music/album-a.webp", "assets/gridgen/music/album-b.webp"]);

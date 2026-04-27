@@ -575,8 +575,8 @@ for implementation work and definitions of done.
 - [x] Use responsive CSS Grid so the poster layout adapts across desktop,
       tablet, and phone widths without fixed-row assumptions.
 - [x] Keep section order and item order deterministic in the poster layout.
-- [x] Decide whether section names are visible in the poster layout or treated
-      as row/group boundaries, then encode that choice in renderer behavior.
+- [x] Render section names as visible poster tier labels while preserving
+      section order as row/group boundaries.
 - [x] Ensure generated HTML remains static: no JavaScript, inline handlers,
       remote scripts, or remote image assets.
 - [x] Add public-interface renderer tests covering transparent generated output,
