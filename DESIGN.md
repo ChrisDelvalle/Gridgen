@@ -516,22 +516,23 @@ An item is one recommendation tile.
 Required renderable fields:
 
 - `id`
-- `title`
-- `link`
-- `image`
 
 Optional renderable fields:
 
+- `title`
 - `description`
+- `link`
+- `image`
 
 Invariants:
 
 - `id` is stable and unique within a collection.
-- `title` is non-empty for renderable collections.
+- `title`, when present after normalization, is non-empty.
 - `link` is either an absolute URL, a root-relative path such as
   `/albums/example/`, or a Jekyll-relative path that does not attempt path
-  traversal.
-- `image` points to a project-owned asset, not an arbitrary absolute path.
+  traversal. Empty links are represented as absent renderable links.
+- `image`, when present, points to a project-owned asset, not an arbitrary
+  absolute path.
 - `description` is plain text, not HTML.
 
 ### Image Reference
@@ -594,7 +595,6 @@ them separately prevents ad hoc URL checks throughout the codebase.
 
 Reject:
 
-- empty links for renderable collections
 - `javascript:` URLs
 - protocol-relative URLs unless explicitly supported later
 - paths containing traversal segments
@@ -619,7 +619,9 @@ destructive migrations during read should be avoided.
 ## Draft Versus Renderable State
 
 The authoring UI needs drafts. A user may create an item before filling in a
-link or uploading an image. Build output does not.
+title, link, description, or image. Build output preserves that choice by
+omitting absent item fields rather than forcing placeholder content into the
+rendered grid.
 
 Use separate parse paths:
 
@@ -638,7 +640,6 @@ Examples of expected failures:
 
 - invalid collection JSON
 - duplicate section ID
-- missing item image
 - invalid item URL
 - unsafe output path
 - unsupported image type
@@ -670,9 +671,7 @@ Initial categories:
 - `collection.duplicateId`
 - `collection.emptyTitle`
 - `section.emptyName`
-- `item.emptyTitle`
 - `item.invalidLink`
-- `item.missingImage`
 - `asset.missingFile`
 - `asset.tooLarge`
 - `asset.invalidCrop`

@@ -107,6 +107,7 @@ export {
   renderGridHtml
 } from "./render/grid-renderer";
 export type {
+  GridRenderLayout,
   JekyllAssetUrlExpression,
   PrepareRenderGridInput,
   PreparedRenderImage,

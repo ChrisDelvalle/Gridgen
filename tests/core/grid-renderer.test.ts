@@ -96,6 +96,77 @@ describe("grid renderer", () => {
     expect(unwrapErr(result).code).toBe(GridgenErrorCode.RenderNotRenderable);
   });
 
+  it("renders items without authored title, link, image, or description", () => {
+    const collection = unwrapOk(
+      parseRenderableCollection({
+        id: "music",
+        schemaVersion: 1,
+        sections: [
+          {
+            id: "s-tier",
+            items: [
+              {
+                id: "blank-item"
+              }
+            ],
+            name: "S Tier"
+          }
+        ],
+        title: "Music"
+      })
+    );
+    const prepared = unwrapOk(
+      prepareRenderGrid({
+        collection,
+        images: [],
+        stylesheetHref: createAssetExpression("/assets/gridgen/gridgen.css")
+      })
+    );
+    const html = renderGridHtml(prepared);
+
+    expect(prepared.sections[0]?.items[0]).toEqual({ id: { value: "blank-item" } });
+    expect(html).toContain('<article class="gridgen-item"><div class="gridgen-item-link">');
+    expect(html).not.toContain("<img");
+    expect(html).not.toContain("<h4");
+    expect(html).not.toContain('<a class="gridgen-item-link"');
+  });
+
+  it("renders poster layout with hidden section labels and transparent generated output", () => {
+    const collection = createRenderableCollection();
+    const albumA = getRenderableItem(collection, 0, 0);
+    const albumB = getRenderableItem(collection, 1, 0);
+    const prepared = unwrapOk(
+      prepareRenderGrid({
+        collection,
+        images: [
+          {
+            itemId: albumA.id,
+            src: createAssetExpression("/assets/gridgen/music/album-a.webp")
+          },
+          {
+            itemId: albumB.id,
+            src: createAssetExpression("/assets/gridgen/music/album-b.webp")
+          }
+        ],
+        layout: "poster",
+        stylesheetHref: createAssetExpression("/assets/gridgen/gridgen.css")
+      })
+    );
+    const html = renderGridHtml(prepared);
+    const css = renderGridCss();
+
+    expect(prepared.layout).toBe("poster");
+    expect(html).toContain("gridgen-collection--poster");
+    expect(html).toContain('aria-label="S Tier"');
+    expect(html).not.toContain('<h3 class="gridgen-section-title"');
+    expect(html).toContain("Album &lt;A&gt;");
+    expect(html).toContain("Best &amp; loudest");
+    expect(html).toContain('href="https://example.com/a"');
+    expect(css).toContain(".gridgen-collection--poster");
+    expect(css).toContain("background: transparent;");
+    expect(css).toContain("text-transform: uppercase;");
+  });
+
   it("renders namespaced responsive CSS", () => {
     const css = renderGridCss();
 

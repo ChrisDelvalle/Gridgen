@@ -171,16 +171,16 @@ export interface DraftItemPatch {
  *
  * @property description Optional non-empty description.
  * @property id Stable item ID.
- * @property image Required source image reference.
- * @property link Renderable link.
- * @property title Non-empty item title.
+ * @property image Optional source image reference.
+ * @property link Optional renderable link.
+ * @property title Optional non-empty item title.
  */
 export interface RenderableItem {
   readonly description?: NonEmptyText;
   readonly id: ItemId;
-  readonly image: GridImage;
-  readonly link: GridLink;
-  readonly title: NonEmptyText;
+  readonly image?: GridImage;
+  readonly link?: GridLink;
+  readonly title?: NonEmptyText;
 }
 
 /**

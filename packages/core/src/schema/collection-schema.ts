@@ -50,8 +50,8 @@ const rawItemSchema = z
     description: z.string().optional(),
     id: z.string(),
     image: rawImageSchema.optional(),
-    link: z.string(),
-    title: z.string()
+    link: z.string().optional(),
+    title: z.string().optional()
   })
   .strict();
 
@@ -381,7 +381,7 @@ function mapRawItem(
     return id;
   }
 
-  const link = parseDraftLink(rawItem.link, `${fieldPath}.link`);
+  const link = parseDraftLink(rawItem.link ?? "", `${fieldPath}.link`);
 
   if (!link.ok) {
     return link;
@@ -407,7 +407,7 @@ function buildDraftItem(
     ...(image === undefined ? {} : { image }),
     id,
     link,
-    title: rawItem.title
+    title: rawItem.title ?? ""
   };
 }
 
@@ -475,87 +475,44 @@ function mapRenderableSection(
     return name;
   }
 
-  const items = mapRenderableItems(section.items, sectionIndex);
-
-  if (!items.ok) {
-    return items;
-  }
-
   return ok({
     id: section.id,
-    items: items.value,
+    items: mapRenderableItems(section.items),
     name: name.value
   });
 }
 
-function mapRenderableItems(
-  items: readonly DraftItem[],
-  sectionIndex: number
-): Result<readonly RenderableItem[], GridgenError> {
-  const renderableItems: RenderableItem[] = [];
-
-  for (const [itemIndex, item] of items.entries()) {
-    const renderableItem = mapRenderableItem(item, sectionIndex, itemIndex);
-
-    if (!renderableItem.ok) {
-      return renderableItem;
-    }
-
-    renderableItems.push(renderableItem.value);
-  }
-
-  return ok(renderableItems);
+function mapRenderableItems(items: readonly DraftItem[]): readonly RenderableItem[] {
+  return items.map(mapRenderableItem);
 }
 
-function mapRenderableItem(
-  item: DraftItem,
-  sectionIndex: number,
-  itemIndex: number
-): Result<RenderableItem, GridgenError> {
-  const fieldPath = `sections.${sectionIndex}.items.${itemIndex}`;
-  const title = parseNonEmptyText(
-    item.title,
-    GridgenErrorCode.ItemEmptyTitle,
-    `${fieldPath}.title`
-  );
+function mapRenderableItem(item: DraftItem): RenderableItem {
+  const title = parseOptionalTitle(item.title);
+  const link = parseOptionalRenderableLink(item.link);
 
-  if (!title.ok) {
-    return title;
-  }
-
-  const link = requireRenderableLink(item.link, `${fieldPath}.link`);
-
-  if (!link.ok) {
-    return link;
-  }
-
-  if (item.image === undefined) {
-    return err(
-      createValidationError(GridgenErrorCode.ItemMissingImage, "Item image is required.", {
-        fieldPath: `${fieldPath}.image`,
-        itemId: item.id.value
-      })
-    );
-  }
-
-  return ok(buildRenderableItem(item, title.value, link.value, item.image));
+  return buildRenderableItem(item, title, link);
 }
 
 function buildRenderableItem(
   item: DraftItem,
-  title: NonEmptyText,
-  link: GridLink,
-  image: GridImage
+  title: NonEmptyText | undefined,
+  link: GridLink | undefined
 ): RenderableItem {
   const description = parseOptionalDescription(item.description);
 
   return {
     ...(description === undefined ? {} : { description }),
-    id: item.id,
-    image,
-    link,
-    title
+    ...(item.image === undefined ? {} : { image: item.image }),
+    ...(link === undefined ? {} : { link }),
+    ...(title === undefined ? {} : { title }),
+    id: item.id
   };
+}
+
+function parseOptionalTitle(title: string): NonEmptyText | undefined {
+  const trimmed = title.trim();
+
+  return trimmed.length === 0 ? undefined : { value: trimmed };
 }
 
 function parseOptionalDescription(description: string | undefined): NonEmptyText | undefined {
@@ -572,24 +529,17 @@ function parseOptionalDescription(description: string | undefined): NonEmptyText
   return { value: trimmed };
 }
 
-function requireRenderableLink(link: DraftLink, fieldPath: string): Result<GridLink, GridgenError> {
+function parseOptionalRenderableLink(link: DraftLink): GridLink | undefined {
   if (link.type === "empty") {
-    return err(
-      createValidationError(GridgenErrorCode.ItemInvalidLink, "Item link is required.", {
-        fieldPath
-      })
-    );
+    return undefined;
   }
 
-  return ok(link);
+  return link;
 }
 
 function parseNonEmptyText(
   input: string,
-  code:
-    | GridgenErrorCode.CollectionEmptyTitle
-    | GridgenErrorCode.ItemEmptyTitle
-    | GridgenErrorCode.SectionEmptyName,
+  code: GridgenErrorCode.CollectionEmptyTitle | GridgenErrorCode.SectionEmptyName,
   fieldPath: string
 ): Result<NonEmptyText, GridgenError> {
   const value = input.trim();

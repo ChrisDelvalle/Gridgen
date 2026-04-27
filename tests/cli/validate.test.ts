@@ -198,9 +198,9 @@ describe("gridgen validate", () => {
 
     const invalidCollection = unwrapOk(
       updateCollection(collection, {
+        name: " ",
         sectionId,
-        title: "Album A",
-        type: CollectionOperationType.AddItem
+        type: CollectionOperationType.RenameSection
       })
     );
     const output = createCliOutput();
@@ -214,7 +214,7 @@ describe("gridgen validate", () => {
     });
 
     expect(exitCode).toBe(1);
-    expect(output.stderr.join("\n")).toContain("item.invalidLink");
+    expect(output.stderr.join("\n")).toContain("section.emptyName");
   });
 });
 

@@ -27,6 +27,13 @@ Build saved collections into a Jekyll site:
 bun run gridgen build ./gridgen ./my-jekyll-blog
 ```
 
+The default build uses the classic embeddable grid layout. To generate the
+opinionated `/mu/core`-style poster layout used by the preview route:
+
+```sh
+bun run gridgen build --layout poster ./gridgen ./my-jekyll-blog
+```
+
 Use the generated include from a Jekyll page or post:
 
 ```liquid
@@ -79,6 +86,11 @@ my-jekyll-blog/
 ```
 
 Repeated builds with unchanged input should produce stable output.
+
+Generated includes are transparent by default so they can sit inside a Jekyll
+theme. The local preview route wraps the same generated poster layout in a
+black preview shell; the black background is preview-only and is not baked into
+the include.
 
 ## Dependency Policy
 

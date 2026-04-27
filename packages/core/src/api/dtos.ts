@@ -1,4 +1,11 @@
-import type { DraftCollection, GridImage, ImageCrop } from "../collection/types";
+import type {
+  DraftCollection,
+  DraftLink,
+  EmptyLink,
+  GridImage,
+  GridLink,
+  ImageCrop
+} from "../collection/types";
 
 /**
  * JSON-safe image reference used by server and browser API contracts.
@@ -21,15 +28,15 @@ export interface GridImageJson {
  * @property description Optional plain text description.
  * @property id Stable item ID text.
  * @property image Optional source image reference.
- * @property link Draft link href or an empty string.
- * @property title Draft item title.
+ * @property link Optional draft link href.
+ * @property title Optional draft item title.
  */
 export interface DraftItemJson {
   readonly description?: string;
   readonly id: string;
   readonly image?: GridImageJson;
-  readonly link: string;
-  readonly title: string;
+  readonly link?: string;
+  readonly title?: string;
 }
 
 /**
@@ -142,9 +149,9 @@ export function serializeDraftCollection(collection: DraftCollection): DraftColl
       items: section.items.map((item) => ({
         ...(item.description === undefined ? {} : { description: item.description }),
         ...(item.image === undefined ? {} : { image: serializeGridImage(item.image) }),
-        id: item.id.value,
-        link: serializeDraftLink(item.link),
-        title: item.title
+        ...(isEmptyDraftLink(item.link) ? {} : { link: serializeDraftLink(item.link) }),
+        ...(item.title.trim().length === 0 ? {} : { title: item.title }),
+        id: item.id.value
       })),
       name: section.name
     })),
@@ -161,15 +168,15 @@ function serializeGridImage(image: GridImage): GridImageJson {
   };
 }
 
-function serializeDraftLink(
-  link: DraftCollection["sections"][number]["items"][number]["link"]
-): string {
+function serializeDraftLink(link: GridLink): string {
   switch (link.type) {
     case "absolute":
       return link.href;
-    case "empty":
-      return "";
     case "site":
       return link.href.value;
   }
+}
+
+function isEmptyDraftLink(link: DraftLink): link is EmptyLink {
+  return link.type === "empty";
 }

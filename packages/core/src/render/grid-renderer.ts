@@ -15,6 +15,11 @@ const stylesheetUrlPrefix = "{{ '";
 const stylesheetUrlSuffix = "' | relative_url }}";
 
 /**
+ * Static grid presentation layout.
+ */
+export type GridRenderLayout = "classic" | "poster";
+
+/**
  * Liquid-safe local asset URL expression used in generated HTML.
  *
  * @property value Liquid expression string.
@@ -39,16 +44,16 @@ export interface RenderGridImage {
  *
  * @property description Optional non-empty description.
  * @property id Stable item ID.
- * @property image Prepared generated image.
- * @property link Renderable item link.
- * @property title Non-empty title.
+ * @property image Optional prepared generated image.
+ * @property link Optional renderable item link.
+ * @property title Optional non-empty title.
  */
 export interface RenderGridItem {
   readonly description?: NonEmptyText;
   readonly id: ItemId;
-  readonly image: RenderGridImage;
-  readonly link: GridLink;
-  readonly title: NonEmptyText;
+  readonly image?: RenderGridImage;
+  readonly link?: GridLink;
+  readonly title?: NonEmptyText;
 }
 
 /**
@@ -68,12 +73,14 @@ export interface RenderGridSection {
  * Prepared render input with all asset URLs already resolved.
  *
  * @property collectionId Stable collection ID.
+ * @property layout Static presentation layout.
  * @property sections Ordered prepared sections.
  * @property stylesheetHref Shared stylesheet liquid expression.
  * @property title Non-empty collection title.
  */
 export interface RenderGridInput {
   readonly collectionId: CollectionId;
+  readonly layout: GridRenderLayout;
   readonly sections: readonly RenderGridSection[];
   readonly stylesheetHref: JekyllAssetUrlExpression;
   readonly title: NonEmptyText;
@@ -95,13 +102,18 @@ export interface PreparedRenderImage {
  *
  * @property collection Renderable source collection.
  * @property images Generated image URLs keyed by item ID.
+ * @property layout Optional static presentation layout.
  * @property stylesheetHref Shared stylesheet liquid expression.
  */
 export interface PrepareRenderGridInput {
   readonly collection: RenderableCollection;
   readonly images: readonly PreparedRenderImage[];
+  readonly layout?: GridRenderLayout;
   readonly stylesheetHref: JekyllAssetUrlExpression;
 }
+
+type RenderableSectionInput = RenderableCollection["sections"][number];
+type RenderableItemInput = RenderableSectionInput["items"][number];
 
 /**
  * Converts a safe root-relative asset path into a Jekyll `relative_url` expression.
@@ -124,9 +136,33 @@ export function createJekyllAssetUrlExpression(href: SafeLocalLink): JekyllAsset
 export function prepareRenderGrid(
   input: PrepareRenderGridInput
 ): Result<RenderGridInput, GridgenError> {
+  const imageMap = createPreparedImageMap(input.images);
+
+  if (!imageMap.ok) {
+    return imageMap;
+  }
+
+  const sections = prepareRenderSections(input.collection.sections, imageMap.value);
+
+  if (!sections.ok) {
+    return sections;
+  }
+
+  return ok({
+    collectionId: input.collection.id,
+    layout: input.layout ?? "classic",
+    sections: sections.value,
+    stylesheetHref: input.stylesheetHref,
+    title: input.collection.title
+  });
+}
+
+function createPreparedImageMap(
+  images: readonly PreparedRenderImage[]
+): Result<ReadonlyMap<string, JekyllAssetUrlExpression>, GridgenError> {
   const imageMap = new Map<string, JekyllAssetUrlExpression>();
 
-  for (const image of input.images) {
+  for (const image of images) {
     if (imageMap.has(image.itemId.value)) {
       return err(
         createRenderError(GridgenErrorCode.RenderNotRenderable, "Duplicate generated image URL.", {
@@ -138,50 +174,95 @@ export function prepareRenderGrid(
     imageMap.set(image.itemId.value, image.src);
   }
 
+  return ok(imageMap);
+}
+
+function prepareRenderSections(
+  sectionsInput: readonly RenderableSectionInput[],
+  imageMap: ReadonlyMap<string, JekyllAssetUrlExpression>
+): Result<readonly RenderGridSection[], GridgenError> {
   const sections: RenderGridSection[] = [];
 
-  for (const section of input.collection.sections) {
-    const items: RenderGridItem[] = [];
+  for (const sectionInput of sectionsInput) {
+    const section = prepareRenderSection(sectionInput, imageMap);
 
-    for (const item of section.items) {
-      const imageSource = imageMap.get(item.id.value);
-
-      if (imageSource === undefined) {
-        return err(
-          createRenderError(
-            GridgenErrorCode.RenderNotRenderable,
-            "Missing generated image URL for renderable item.",
-            {
-              itemId: item.id.value
-            }
-          )
-        );
-      }
-
-      items.push({
-        ...(item.description === undefined ? {} : { description: item.description }),
-        id: item.id,
-        image: {
-          alt: resolveImageAltText(item.title, item.image.alt),
-          src: imageSource
-        },
-        link: item.link,
-        title: item.title
-      });
+    if (!section.ok) {
+      return section;
     }
 
-    sections.push({
-      id: section.id,
-      items,
-      name: section.name
-    });
+    sections.push(section.value);
+  }
+
+  return ok(sections);
+}
+
+function prepareRenderSection(
+  section: RenderableSectionInput,
+  imageMap: ReadonlyMap<string, JekyllAssetUrlExpression>
+): Result<RenderGridSection, GridgenError> {
+  const items = prepareRenderItems(section.items, imageMap);
+
+  if (!items.ok) {
+    return items;
   }
 
   return ok({
-    collectionId: input.collection.id,
-    sections,
-    stylesheetHref: input.stylesheetHref,
-    title: input.collection.title
+    id: section.id,
+    items: items.value,
+    name: section.name
+  });
+}
+
+function prepareRenderItems(
+  itemsInput: readonly RenderableItemInput[],
+  imageMap: ReadonlyMap<string, JekyllAssetUrlExpression>
+): Result<readonly RenderGridItem[], GridgenError> {
+  const items: RenderGridItem[] = [];
+
+  for (const itemInput of itemsInput) {
+    const item = prepareRenderItem(itemInput, imageMap);
+
+    if (!item.ok) {
+      return item;
+    }
+
+    items.push(item.value);
+  }
+
+  return ok(items);
+}
+
+function prepareRenderItem(
+  item: RenderableItemInput,
+  imageMap: ReadonlyMap<string, JekyllAssetUrlExpression>
+): Result<RenderGridItem, GridgenError> {
+  const imageSource = item.image === undefined ? undefined : imageMap.get(item.id.value);
+
+  if (item.image !== undefined && imageSource === undefined) {
+    return err(
+      createRenderError(
+        GridgenErrorCode.RenderNotRenderable,
+        "Missing generated image URL for renderable item.",
+        {
+          itemId: item.id.value
+        }
+      )
+    );
+  }
+
+  return ok({
+    ...(item.description === undefined ? {} : { description: item.description }),
+    ...(imageSource === undefined || item.image === undefined
+      ? {}
+      : {
+          image: {
+            alt: resolveImageAltText(item.title, item.image.alt),
+            src: imageSource
+          }
+        }),
+    ...(item.link === undefined ? {} : { link: item.link }),
+    ...(item.title === undefined ? {} : { title: item.title }),
+    id: item.id
   });
 }
 
@@ -194,13 +275,13 @@ export function prepareRenderGrid(
 export function renderGridHtml(input: RenderGridInput): string {
   const collectionHeadingId = `gridgen-${input.collectionId.value}-title`;
   const sectionsHtml = input.sections
-    .map((section) => renderSection(input.collectionId, section))
+    .map((section) => renderSection(input.collectionId, section, input.layout))
     .join("");
 
   return [
     generatedFileComment,
     `<link rel="stylesheet" href="${escapeHtmlAttribute(input.stylesheetHref.value)}">`,
-    `<section class="gridgen-collection" aria-labelledby="${escapeHtmlAttribute(collectionHeadingId)}">`,
+    `<section class="gridgen-collection gridgen-collection--${input.layout}" aria-labelledby="${escapeHtmlAttribute(collectionHeadingId)}">`,
     `<header class="gridgen-header"><h2 class="gridgen-title" id="${escapeHtmlAttribute(collectionHeadingId)}">${escapeHtmlText(input.title.value)}</h2></header>`,
     sectionsHtml,
     "</section>"
@@ -284,37 +365,148 @@ export function renderGridCss(): string {
   line-height: 1.5;
   margin: 0;
   opacity: 0.82;
+}
+
+.gridgen-collection--poster {
+  --gridgen-poster-tile-min: 8.75rem;
+  background: transparent;
+  color: inherit;
+  gap: clamp(2.5rem, 5vw, 4.5rem);
+  margin-inline: auto;
+  max-width: 92rem;
+  padding: clamp(1.5rem, 4vw, 3.25rem);
+}
+
+.gridgen-collection--poster .gridgen-header {
+  border-bottom: 0;
+  padding-bottom: 0;
+  text-align: center;
+}
+
+.gridgen-collection--poster .gridgen-title {
+  font-size: clamp(3rem, 10vw, 7.5rem);
+  font-weight: 900;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.gridgen-collection--poster .gridgen-section {
+  gap: clamp(1.75rem, 4vw, 4rem);
+}
+
+.gridgen-collection--poster .gridgen-section-title {
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.gridgen-collection--poster .gridgen-grid {
+  align-items: start;
+  gap: clamp(2.5rem, 5vw, 4.25rem) clamp(1.5rem, 3vw, 2.25rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--gridgen-poster-tile-min)), 1fr));
+}
+
+.gridgen-collection--poster .gridgen-item {
+  gap: 0;
+  min-width: 0;
+}
+
+.gridgen-collection--poster .gridgen-item-link {
+  gap: 0.85rem;
+}
+
+.gridgen-collection--poster .gridgen-item-image {
+  border-radius: 0;
+}
+
+.gridgen-collection--poster .gridgen-item-body {
+  gap: 0.2rem;
+  text-align: center;
+}
+
+.gridgen-collection--poster .gridgen-item-title {
+  font-size: 0.875rem;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.gridgen-collection--poster .gridgen-item-description {
+  font-size: 0.82rem;
+  line-height: 1.15;
+  opacity: 0.88;
+}
+
+@media (min-width: 48rem) {
+  .gridgen-collection--poster {
+    --gridgen-poster-tile-min: 10.5rem;
+  }
 }`;
 }
 
-function renderSection(collectionId: CollectionId, section: RenderGridSection): string {
+function renderSection(
+  collectionId: CollectionId,
+  section: RenderGridSection,
+  layout: GridRenderLayout
+): string {
   const sectionHeadingId = `gridgen-${collectionId.value}-${section.id.value}`;
   const itemsHtml = section.items.map(renderItem).join("");
+  const headingHtml =
+    layout === "poster"
+      ? ""
+      : `<h3 class="gridgen-section-title" id="${escapeHtmlAttribute(sectionHeadingId)}">${escapeHtmlText(section.name.value)}</h3>`;
 
-  return `<section class="gridgen-section" aria-labelledby="${escapeHtmlAttribute(sectionHeadingId)}"><h3 class="gridgen-section-title" id="${escapeHtmlAttribute(sectionHeadingId)}">${escapeHtmlText(section.name.value)}</h3><div class="gridgen-grid">${itemsHtml}</div></section>`;
+  if (layout === "poster") {
+    return `<section class="gridgen-section" aria-label="${escapeHtmlAttribute(section.name.value)}"><div class="gridgen-grid">${itemsHtml}</div></section>`;
+  }
+
+  return `<section class="gridgen-section" aria-labelledby="${escapeHtmlAttribute(sectionHeadingId)}">${headingHtml}<div class="gridgen-grid">${itemsHtml}</div></section>`;
 }
 
 function renderItem(item: RenderGridItem): string {
+  const imageHtml =
+    item.image === undefined
+      ? ""
+      : `<img class="gridgen-item-image" src="${escapeHtmlAttribute(item.image.src.value)}" alt="${escapeHtmlAttribute(item.image.alt)}">`;
+  const titleHtml =
+    item.title === undefined
+      ? ""
+      : `<h4 class="gridgen-item-title">${escapeHtmlText(item.title.value)}</h4>`;
   const descriptionHtml =
     item.description === undefined
       ? ""
       : `<p class="gridgen-item-description">${escapeHtmlText(item.description.value)}</p>`;
+  const bodyHtml =
+    titleHtml.length === 0 && descriptionHtml.length === 0
+      ? ""
+      : `<div class="gridgen-item-body">${titleHtml}${descriptionHtml}</div>`;
+  const contentsHtml = `${imageHtml}${bodyHtml}`;
 
-  return `<article class="gridgen-item"><a class="gridgen-item-link" href="${escapeHtmlAttribute(renderLinkHref(item.link))}"><img class="gridgen-item-image" src="${escapeHtmlAttribute(item.image.src.value)}" alt="${escapeHtmlAttribute(item.image.alt)}"><div class="gridgen-item-body"><h4 class="gridgen-item-title">${escapeHtmlText(item.title.value)}</h4>${descriptionHtml}</div></a></article>`;
+  if (item.link === undefined) {
+    return `<article class="gridgen-item"><div class="gridgen-item-link">${contentsHtml}</div></article>`;
+  }
+
+  return `<article class="gridgen-item"><a class="gridgen-item-link" href="${escapeHtmlAttribute(renderLinkHref(item.link))}">${contentsHtml}</a></article>`;
 }
 
 function renderLinkHref(link: GridLink): string {
   return link.type === "absolute" ? link.href : link.href.value;
 }
 
-function resolveImageAltText(title: NonEmptyText, explicitAltText: string | undefined): string {
+function resolveImageAltText(
+  title: NonEmptyText | undefined,
+  explicitAltText: string | undefined
+): string {
   if (explicitAltText === undefined) {
-    return title.value;
+    return title?.value ?? "";
   }
 
   const trimmedAltText = explicitAltText.trim();
 
-  return trimmedAltText.length === 0 ? title.value : trimmedAltText;
+  return trimmedAltText.length === 0 ? (title?.value ?? "") : trimmedAltText;
 }
 
 function escapeHtmlText(input: string): string {

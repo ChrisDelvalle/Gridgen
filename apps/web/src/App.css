@@ -233,8 +233,7 @@
 .gridgen-inspector {
   display: flex;
   width: 100%;
-  min-width: 320px;
-  max-width: 480px;
+  min-width: 0;
   height: calc(100svh - 56px);
   flex-direction: column;
   border-left: 1px solid var(--border);

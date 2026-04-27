@@ -3,6 +3,8 @@
  */
 export type EditorMode = "desktop" | "tablet" | "phone";
 
+const desktopEditorBreakpoint = 1200;
+
 /**
  * Public state needed to decide whether an item action is currently valid.
  */
@@ -46,7 +48,7 @@ export function selectEditorMode(viewportWidth: number): EditorMode {
     return "phone";
   }
 
-  if (viewportWidth < 1100) {
+  if (viewportWidth < desktopEditorBreakpoint) {
     return "tablet";
   }
 

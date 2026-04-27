@@ -15,9 +15,11 @@ import {
 } from "../paths/path-planning";
 import {
   createJekyllAssetUrlExpression,
+  type GridRenderLayout,
   type JekyllAssetUrlExpression,
   renderGridCss,
   renderGridHtml,
+  type RenderGridItem,
   type RenderGridSection
 } from "../render/grid-renderer";
 import { ok, type Result } from "../result/result";
@@ -55,10 +57,12 @@ export interface PlannedImageOutput {
  *
  * @property collection Renderable source collection.
  * @property jekyllRoot Absolute Jekyll site root path.
+ * @property layout Optional static presentation layout.
  */
 export interface JekyllBuildInput {
   readonly collection: RenderableCollection;
   readonly jekyllRoot: string;
+  readonly layout?: GridRenderLayout;
 }
 
 /**
@@ -79,6 +83,9 @@ export interface JekyllBuildPlan {
   readonly imageOutputs: readonly PlannedImageOutput[];
   readonly paths: JekyllOutputPaths;
 }
+
+type RenderableSectionInput = RenderableCollection["sections"][number];
+type RenderableItemInput = RenderableSectionInput["items"][number];
 
 /**
  * Plans all Jekyll outputs for one renderable collection without touching the filesystem.
@@ -114,6 +121,7 @@ export function planJekyllBuild(input: JekyllBuildInput): Result<JekyllBuildPlan
     htmlOutput: {
       contents: renderGridHtml({
         collectionId: input.collection.id,
+        layout: input.layout ?? "classic",
         sections: plannedAssets.renderSections,
         stylesheetHref,
         title: input.collection.title
@@ -133,61 +141,132 @@ function planCollectionAssets(
   readonly renderSections: readonly RenderGridSection[];
 } {
   const imageOutputs: PlannedImageOutput[] = [];
-  const renderSections: RenderGridSection[] = [];
+  const renderSections = collection.sections.map((section) => {
+    const sectionPlan = planSectionAssets(collectionAssetDirectory, section);
 
-  for (const section of collection.sections) {
-    const renderItems: Array<RenderGridSection["items"][number]> = [];
+    imageOutputs.push(...sectionPlan.imageOutputs);
 
-    for (const item of section.items) {
-      const imageFileName = `${item.id.value}.webp`;
-      const relativeImagePath = path.posix.join(
-        collectionAssetDirectory.relativePath.value,
-        imageFileName
-      );
-      const outputUrl = createJekyllAssetUrlExpression({
-        value: `/${relativeImagePath}`
-      });
-
-      const imageOutput: PlannedImageOutput = {
-        crop: item.image.crop,
-        itemId: item.id,
-        outputPath: {
-          absolutePath: {
-            value: path.join(collectionAssetDirectory.absolutePath.value, imageFileName)
-          },
-          relativePath: {
-            value: relativeImagePath
-          }
-        },
-        outputUrl,
-        sourceFileName: item.image.sourceFileName
-      };
-
-      imageOutputs.push(imageOutput);
-      renderItems.push({
-        ...(item.description === undefined ? {} : { description: item.description }),
-        id: item.id,
-        image: {
-          alt:
-            item.image.alt === undefined || item.image.alt.trim().length === 0
-              ? item.title.value
-              : item.image.alt.trim(),
-          src: outputUrl
-        },
-        link: item.link,
-        title: item.title
-      });
-    }
-
-    renderSections.push({
-      id: section.id,
-      items: renderItems,
-      name: section.name
-    });
-  }
+    return sectionPlan.renderSection;
+  });
 
   return {
     imageOutputs,
     renderSections
+  };
+}
+
+function planSectionAssets(
+  collectionAssetDirectory: PlannedPath,
+  section: RenderableSectionInput
+): {
+  readonly imageOutputs: readonly PlannedImageOutput[];
+  readonly renderSection: RenderGridSection;
+} {
+  const imageOutputs: PlannedImageOutput[] = [];
+  const renderItems = section.items.map((item) => {
+    const itemPlan = planItemAssets(collectionAssetDirectory, item);
+
+    if (itemPlan.imageOutput !== undefined) {
+      imageOutputs.push(itemPlan.imageOutput);
+    }
+
+    return itemPlan.renderItem;
+  });
+
+  return {
+    imageOutputs,
+    renderSection: {
+      id: section.id,
+      items: renderItems,
+      name: section.name
+    }
+  };
+}
+
+function planItemAssets(
+  collectionAssetDirectory: PlannedPath,
+  item: RenderableItemInput
+): {
+  readonly imageOutput?: PlannedImageOutput;
+  readonly renderItem: RenderGridItem;
+} {
+  const plannedImage = planOptionalItemImage(collectionAssetDirectory, item);
+
+  return {
+    ...(plannedImage === undefined ? {} : { imageOutput: plannedImage.imageOutput }),
+    renderItem: buildRenderItem(item, plannedImage?.outputUrl)
+  };
+}
+
+function buildRenderItem(
+  item: RenderableItemInput,
+  outputUrl: JekyllAssetUrlExpression | undefined
+): RenderGridItem {
+  return {
+    ...(item.description === undefined ? {} : { description: item.description }),
+    ...(item.image === undefined || outputUrl === undefined
+      ? {}
+      : {
+          image: {
+            alt: resolveImageAltText(item),
+            src: outputUrl
+          }
+        }),
+    ...(item.link === undefined ? {} : { link: item.link }),
+    ...(item.title === undefined ? {} : { title: item.title }),
+    id: item.id
+  };
+}
+
+function resolveImageAltText(item: RenderableItemInput): string {
+  const explicitAlt = item.image?.alt;
+
+  if (explicitAlt === undefined) {
+    return item.title?.value ?? "";
+  }
+
+  const trimmedAlt = explicitAlt.trim();
+
+  return trimmedAlt.length === 0 ? (item.title?.value ?? "") : trimmedAlt;
+}
+
+function planOptionalItemImage(
+  collectionAssetDirectory: PlannedPath,
+  item: RenderableItemInput
+):
+  | {
+      readonly imageOutput: PlannedImageOutput;
+      readonly outputUrl: ReturnType<typeof createJekyllAssetUrlExpression>;
+    }
+  | undefined {
+  if (item.image === undefined) {
+    return undefined;
+  }
+
+  const imageFileName = `${item.id.value}.webp`;
+  const relativeImagePath = path.posix.join(
+    collectionAssetDirectory.relativePath.value,
+    imageFileName
+  );
+  const outputUrl = createJekyllAssetUrlExpression({
+    value: `/${relativeImagePath}`
+  });
+
+  return {
+    imageOutput: {
+      crop: item.image.crop,
+      itemId: item.id,
+      outputPath: {
+        absolutePath: {
+          value: path.join(collectionAssetDirectory.absolutePath.value, imageFileName)
+        },
+        relativePath: {
+          value: relativeImagePath
+        }
+      },
+      outputUrl,
+      sourceFileName: item.image.sourceFileName
+    },
+    outputUrl
   };
 }

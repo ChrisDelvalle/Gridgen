@@ -219,7 +219,8 @@ export function App(): ReactElement {
   const [collapsedSectionIds, setCollapsedSectionIds] = useState<ReadonlySet<string>>(
     () => new Set()
   );
-  const editorMode = useEditorMode();
+  const viewportWidth = useViewportWidth();
+  const editorMode = useMemo(() => selectEditorMode(viewportWidth), [viewportWidth]);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -478,7 +479,11 @@ export function App(): ReactElement {
             />
           ) : (
             <ResizablePanelGroup className="gridgen-editor-split" orientation="horizontal">
-              <ResizablePanel className="gridgen-canvas-panel" defaultSize={72} minSize={50}>
+              <ResizablePanel
+                className="gridgen-canvas-panel"
+                groupResizeBehavior="preserve-relative-size"
+                minSize="520px"
+              >
                 <GridCanvas
                   collapsedSectionIds={collapsedSectionIds}
                   collection={currentCollection}
@@ -510,9 +515,10 @@ export function App(): ReactElement {
                   <ResizableHandle withHandle />
                   <ResizablePanel
                     className="gridgen-inspector-panel"
-                    defaultSize={28}
-                    maxSize={36}
-                    minSize={22}
+                    defaultSize="384px"
+                    groupResizeBehavior="preserve-pixel-size"
+                    maxSize="480px"
+                    minSize="320px"
                   >
                     <ItemEditorPanel
                       collectionId={currentCollection.id}
@@ -1052,7 +1058,7 @@ function SortableItemCard({
   const availability = getItemActionAvailability({
     itemCount: section.items.length,
     itemIndex,
-    link: item.link,
+    link: item.link ?? "",
     sectionCount: sectionIds.length,
     sectionIndex
   });
@@ -1082,7 +1088,7 @@ function SortableItemCard({
           >
             <ItemImage collectionId={collection.id} item={item} />
             <span className="gridgen-card__body">
-              <span className="gridgen-card__title">{item.title.trim() || "Untitled item"}</span>
+              <span className="gridgen-card__title">{item.title?.trim() || "Untitled item"}</span>
               <span className="gridgen-card__description">
                 {item.description?.trim() || "No description yet"}
               </span>
@@ -1097,7 +1103,7 @@ function SortableItemCard({
             </ContextMenuItem>
             <ContextMenuItem
               disabled={!availability.canOpenLink}
-              onSelect={() => openItemLink(item.link)}
+              onSelect={() => openItemLink(item.link ?? "")}
             >
               <Link />
               Open link
@@ -1158,7 +1164,7 @@ function ItemOverflowActions({
         <DropdownMenuGroup>
           <DropdownMenuItem
             disabled={!availability.canOpenLink}
-            onSelect={() => openItemLink(item.link)}
+            onSelect={() => openItemLink(item.link ?? "")}
           >
             <Link />
             Open link
@@ -1311,7 +1317,7 @@ function ItemEditorPanel({
               aria-invalid={getFieldError(fieldErrors, "item.title") !== undefined}
               id="item-title"
               onChange={(event) => onChange({ ...item, title: event.currentTarget.value })}
-              value={item.title}
+              value={item.title ?? ""}
             />
             <InlineFieldError fieldErrors={fieldErrors} path="item.title" />
           </Field>
@@ -1335,7 +1341,7 @@ function ItemEditorPanel({
                 id="item-link"
                 onChange={(event) => onChange({ ...item, link: event.currentTarget.value })}
                 placeholder="https://example.com"
-                value={item.link}
+                value={item.link ?? ""}
               />
             </InputGroup>
             <InlineFieldError fieldErrors={fieldErrors} path="item.link" />
@@ -1641,7 +1647,7 @@ function ItemImage({
 
   return (
     <img
-      alt={item.image.alt ?? item.title}
+      alt={item.image.alt ?? item.title ?? ""}
       className="gridgen-card__image"
       data-large={large}
       src={createAssetPreviewUrl(collectionId, item.image.sourceFileName)}
@@ -1683,7 +1689,7 @@ function InlineFieldError({
   return <ShadcnFieldError>{error}</ShadcnFieldError>;
 }
 
-function useEditorMode(): EditorMode {
+function useViewportWidth(): number {
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
 
   useEffect(() => {
@@ -1694,7 +1700,7 @@ function useEditorMode(): EditorMode {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  return useMemo(() => selectEditorMode(viewportWidth), [viewportWidth]);
+  return viewportWidth;
 }
 
 async function loadInitialState(

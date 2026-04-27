@@ -15,6 +15,7 @@ import {
   parseSectionId,
   parseSlug,
   type Result,
+  serializeDraftCollection,
   toRenderableCollection
 } from "@gridgen/core";
 import { describe, expect, test } from "bun:test";
@@ -42,6 +43,63 @@ describe("collection schema parsing", () => {
     expect(draft.sections[0]?.items[0]?.link).toEqual({ type: "empty" });
   });
 
+  test("parses draft items when authored fields are omitted", () => {
+    const input = validCollectionInput();
+    firstSectionInput(input).items = [
+      {
+        id: "empty-item"
+      }
+    ];
+    const draft = unwrapOk(parseDraftCollection(input));
+    const item = draft.sections[0]?.items[0];
+
+    expect(item?.description).toBeUndefined();
+    expect(item?.image).toBeUndefined();
+    expect(item?.link).toEqual({ type: "empty" });
+    expect(item?.title).toBe("");
+  });
+
+  test("serializes draft items without empty optional authored fields", () => {
+    const input = validCollectionInput();
+    firstSectionInput(input).items = [
+      {
+        id: "empty-item"
+      }
+    ];
+    const draft = unwrapOk(parseDraftCollection(input));
+
+    expect(serializeDraftCollection(draft).sections[0]?.items[0]).toEqual({
+      id: "empty-item"
+    });
+  });
+
+  test("serializes present draft item fields with safe links and image metadata", () => {
+    const absoluteLinkDraft = unwrapOk(parseDraftCollection(validCollectionInput()));
+    const draft = unwrapOk(
+      parseDraftCollection(
+        validCollectionInput({
+          link: "/albums/a"
+        })
+      )
+    );
+    const item = serializeDraftCollection(draft).sections[0]?.items[0];
+
+    expect(serializeDraftCollection(absoluteLinkDraft).sections[0]?.items[0]?.link).toBe(
+      "https://example.com/a"
+    );
+    expect(item).toMatchObject({
+      description: "Optional short text.",
+      id: "album-a",
+      image: {
+        alt: "Album A cover",
+        sourceFileName: "album-a.jpg",
+        type: "file"
+      },
+      link: "/albums/a",
+      title: "Album A"
+    });
+  });
+
   test("parses renderable collections with normalized display text", () => {
     const renderable = unwrapOk(
       parseRenderableCollection(
@@ -53,7 +111,7 @@ describe("collection schema parsing", () => {
 
     expect(renderable.title.value).toBe("Music");
     expect(renderable.sections[0]?.name.value).toBe("S Tier");
-    expect(renderable.sections[0]?.items[0]?.title.value).toBe("Album A");
+    expect(renderable.sections[0]?.items[0]?.title?.value).toBe("Album A");
     expect(renderable.sections[0]?.items[0]?.description).toBeUndefined();
   });
 
@@ -349,16 +407,16 @@ describe("renderable validation", () => {
     expect(unwrapErr(toRenderableCollection(draft)).code).toBe(GridgenErrorCode.SectionEmptyName);
   });
 
-  test("rejects empty item titles", () => {
+  test("omits empty item titles from renderable items", () => {
     const input = validCollectionInput({
       title: " "
     });
     const draft = unwrapOk(parseDraftCollection(input));
 
-    expect(unwrapErr(toRenderableCollection(draft)).code).toBe(GridgenErrorCode.ItemEmptyTitle);
+    expect(unwrapOk(toRenderableCollection(draft)).sections[0]?.items[0]?.title).toBeUndefined();
   });
 
-  test("rejects missing renderable links", () => {
+  test("omits empty item links from renderable items", () => {
     const draft = unwrapOk(
       parseDraftCollection(
         validCollectionInput({
@@ -367,15 +425,15 @@ describe("renderable validation", () => {
       )
     );
 
-    expect(unwrapErr(toRenderableCollection(draft)).code).toBe(GridgenErrorCode.ItemInvalidLink);
+    expect(unwrapOk(toRenderableCollection(draft)).sections[0]?.items[0]?.link).toBeUndefined();
   });
 
-  test("rejects missing renderable images", () => {
+  test("omits missing item images from renderable items", () => {
     const input = validCollectionInput();
     delete firstItemInput(input).image;
     const draft = unwrapOk(parseDraftCollection(input));
 
-    expect(unwrapErr(toRenderableCollection(draft)).code).toBe(GridgenErrorCode.ItemMissingImage);
+    expect(unwrapOk(toRenderableCollection(draft)).sections[0]?.items[0]?.image).toBeUndefined();
   });
 
   test("returns draft parse failures from parseRenderableCollection", () => {
@@ -413,8 +471,8 @@ interface ValidItemInput {
   description?: string;
   id: string;
   image?: ValidImageInput;
-  link: string;
-  title: string;
+  link?: string;
+  title?: string;
 }
 
 interface ValidImageInput {

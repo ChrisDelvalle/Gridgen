@@ -13,9 +13,7 @@ export enum GridgenErrorCode {
   CollectionUnsupportedSchemaVersion = "collection.unsupportedSchemaVersion",
   FilesystemReadFailed = "filesystem.readFailed",
   FilesystemWriteFailed = "filesystem.writeFailed",
-  ItemEmptyTitle = "item.emptyTitle",
   ItemInvalidLink = "item.invalidLink",
-  ItemMissingImage = "item.missingImage",
   ItemNotFound = "item.notFound",
   PathOutsideRoot = "path.outsideRoot",
   PathUnsafe = "path.unsafe",
@@ -106,9 +104,7 @@ export function createValidationError(
     | GridgenErrorCode.CollectionEmptyTitle
     | GridgenErrorCode.CollectionInvalidJson
     | GridgenErrorCode.CollectionUnsupportedSchemaVersion
-    | GridgenErrorCode.ItemEmptyTitle
     | GridgenErrorCode.ItemInvalidLink
-    | GridgenErrorCode.ItemMissingImage
     | GridgenErrorCode.SectionEmptyName,
   message: string,
   context: GridgenErrorContext = {}

@@ -1,6 +1,7 @@
 import {
   type CollectionId,
   type CollectionResponseDto,
+  createAssetError,
   createCollectionDraft,
   createGridgenError,
   createOperationError,
@@ -353,6 +354,7 @@ export function registerGridgenRoutes(app: Hono, input: RegisterGridgenRoutesInp
           }
         }))
       ),
+      layout: "poster",
       stylesheetHref: {
         value: "/preview/gridgen.css"
       }
@@ -399,6 +401,16 @@ export function registerGridgenRoutes(app: Hono, input: RegisterGridgenRoutesInp
       return jsonError(
         context,
         createOperationError(GridgenErrorCode.ItemNotFound, "Item was not found.", {
+          itemId: itemId.value.value
+        }),
+        404
+      );
+    }
+
+    if (item.image === undefined) {
+      return jsonError(
+        context,
+        createAssetError(GridgenErrorCode.AssetMissingFile, "Item does not have a preview image.", {
           itemId: itemId.value.value
         }),
         404
@@ -669,7 +681,7 @@ function htmlError(context: Context, error: GridgenError, status: 400 | 404): Re
 }
 
 function renderPreviewDocument(body: string): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Gridgen Preview</title></head><body>${body}</body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Gridgen Preview</title><style>body{margin:0;background:#08080a;color:#f8f8f7;font-family:Inter,ui-sans-serif,system-ui,sans-serif}.gridgen-preview-shell{min-height:100svh;background:#08080a;color:#f8f8f7}.gridgen-preview-error{box-sizing:border-box;display:grid;gap:0.75rem;min-height:100svh;place-content:center;padding:2rem;text-align:center}.gridgen-preview-error h1,.gridgen-preview-error p{margin:0}</style></head><body><div class="gridgen-preview-shell">${body}</div></body></html>`;
 }
 
 function escapeHtmlText(input: string): string {

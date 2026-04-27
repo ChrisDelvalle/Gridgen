@@ -40,12 +40,21 @@ test("authors, crops, previews, and builds a collection", async ({ page, context
   await page.getByRole("button", { name: "Preview" }).click();
   const previewPage = await previewPagePromise;
   await expect(previewPage.locator(".gridgen-grid")).toBeVisible();
+  await expect(previewPage.locator(".gridgen-preview-shell")).toHaveCSS(
+    "background-color",
+    "rgb(8, 8, 10)"
+  );
+  await expect(previewPage.locator(".gridgen-collection--poster")).toBeVisible();
   await expect(previewPage.getByText("Album A")).toBeVisible();
 
-  execFileSync("bun", ["packages/cli/src/bin.ts", "build", sourceWorkspaceRoot, jekyllRoot], {
-    cwd: process.cwd(),
-    stdio: "pipe"
-  });
+  execFileSync(
+    "bun",
+    ["packages/cli/src/bin.ts", "build", "--layout", "poster", sourceWorkspaceRoot, jekyllRoot],
+    {
+      cwd: process.cwd(),
+      stdio: "pipe"
+    }
+  );
 
   const collectionFileName = await findSingleCollectionFile();
   const collectionId = collectionFileName.slice(0, -".json".length);
@@ -59,6 +68,8 @@ test("authors, crops, previews, and builds a collection", async ({ page, context
 
   expect(savedCollection.sections[0].items[0].image.crop.width).toBeLessThanOrEqual(100);
   expect(generatedInclude).toContain("Album A");
+  expect(generatedInclude).toContain("gridgen-collection--poster");
+  expect(generatedInclude).not.toContain("background:#08080a");
 });
 
 test("supports redesigned shell, sidebar, menus, and responsive editor surfaces", async ({
@@ -107,6 +118,17 @@ test("supports redesigned shell, sidebar, menus, and responsive editor surfaces"
   }
 
   expect(inspectorBox.x + inspectorBox.width).toBeLessThanOrEqual(1440);
+
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await expect(desktopInspector).toBeVisible();
+  const mediumInspectorBox = await desktopInspector.boundingBox();
+
+  if (mediumInspectorBox === null) {
+    throw new Error("Expected medium desktop item editor bounds.");
+  }
+
+  expect(mediumInspectorBox.width).toBeGreaterThanOrEqual(320);
+  expect(mediumInspectorBox.x + mediumInspectorBox.width).toBeLessThanOrEqual(1280);
 
   await page.getByRole("button", { name: "Collapse section" }).first().click();
   await expect(page.getByRole("button", { name: "Add Item" })).toBeHidden();

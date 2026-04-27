@@ -256,6 +256,32 @@ describe("source workspace IO", () => {
 
     expect(result.ok).toBe(false);
   });
+
+  it("reports soft-delete rename failures after touching earlier paths", async () => {
+    const workspaceRoot = await makeTemporaryDirectory();
+    const collection = unwrapOk(createCollectionDraft({ title: "Music" }));
+    const trashConflictPath = path.join(
+      workspaceRoot,
+      ".trash",
+      "2026-04-26-music",
+      "music.json",
+      "child"
+    );
+
+    await writeCollectionFile({ collection, workspaceRoot });
+    await fs.mkdir(trashConflictPath, { recursive: true });
+
+    const result = await softDeleteCollection({
+      collectionId: collection.id,
+      timestamp: "2026-04-26",
+      workspaceRoot
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.touchedPaths).toEqual([]);
+    }
+  });
 });
 
 describe("generated Jekyll output IO", () => {

@@ -70,8 +70,10 @@ for implementation work and definitions of done.
 - [x] Enforce `schemaVersion: 1` and reject unsupported schema versions with a
       structured error.
 - [x] Reject duplicate section IDs and duplicate item IDs within a collection.
-- [x] Reject renderable collections with empty titles, empty section names,
-      empty item titles, missing images, or invalid links.
+- [x] Reject renderable collections with empty collection titles, empty section
+      names, or invalid provided item links.
+- [x] Preserve optional item title, description, link, and image fields by
+      omitting absent renderable output instead of forcing placeholder data.
 - [x] Validate image crop values as finite, positive percentage rectangles
       inside the source image coordinate space.
 - [x] Validate item links as either `http:`/`https:` absolute URLs or safe
@@ -551,3 +553,40 @@ for implementation work and definitions of done.
       resized-inspector, tablet, and phone layouts.
 - [x] Ensure UI coverage asserts user-visible behavior and public interfaces,
       not implementation details or test-only exports.
+
+## Milestone 35: Poster Layout Preview And Build Output
+
+- [x] Define a named opinionated static renderer layout for `/mu/core`-style
+      recommendation grids.
+- [x] Keep the generated Jekyll include embeddable with a transparent
+      background.
+- [x] Ensure preview wraps the same generated include and stylesheet in a
+      preview-only black presentation shell.
+- [x] Add a CLI build option for selecting the poster layout without changing
+      source collection JSON shape.
+- [x] Keep layout selection in pure core render/build planning types rather
+      than branching directly inside CLI or server route code.
+- [x] Render a large centered uppercase collection title for the poster layout.
+- [x] Render item images as square tiles with stable object-fit behavior.
+- [x] Render item title and optional description as centered captions below the
+      image.
+- [x] Ensure optional item fields remain valid in the poster layout: missing
+      image, title, description, or link must not break rendering.
+- [x] Use responsive CSS Grid so the poster layout adapts across desktop,
+      tablet, and phone widths without fixed-row assumptions.
+- [x] Keep section order and item order deterministic in the poster layout.
+- [x] Decide whether section names are visible in the poster layout or treated
+      as row/group boundaries, then encode that choice in renderer behavior.
+- [x] Ensure generated HTML remains static: no JavaScript, inline handlers,
+      remote scripts, or remote image assets.
+- [x] Add public-interface renderer tests covering transparent generated output,
+      black preview shell behavior, captions, links, optional fields, and
+      escaping.
+- [x] Add CLI tests covering the poster layout option and generated file
+      contents.
+- [x] Add server/preview tests proving preview uses the same poster renderer
+      output with only the preview shell adding the black background.
+- [x] Add or update E2E coverage for opening poster preview from the authoring
+      UI and building matching Jekyll assets from the CLI.
+- [x] Document the layout option and include usage in the README once the
+      implementation is complete.

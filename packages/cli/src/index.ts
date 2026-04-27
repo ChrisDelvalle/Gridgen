@@ -5,6 +5,7 @@ import {
   type DraftCollection,
   type GridgenError,
   GridgenErrorCode,
+  type GridRenderLayout,
   type JekyllBuildPlan,
   planJekyllBuild,
   serializeGridgenError,
@@ -109,11 +110,13 @@ export async function runGridgenCli(input: RunGridgenCliInput): Promise<number> 
     .command("build")
     .argument("<source-file-or-dir>")
     .argument("<jekyll-site>")
+    .option("--layout <layout>", "Static renderer layout: classic or poster.", parseLayoutOption)
     .description("Build static Jekyll include and CSS assets.")
-    .action(async (source: string, jekyllSite: string) => {
+    .action(async (source: string, jekyllSite: string, options: BuildCommandOptions) => {
       exitCode = await buildCommand({
         cwd: input.cwd,
         jekyllSite,
+        layout: options.layout,
         output: input.output,
         source
       });
@@ -141,6 +144,7 @@ interface ValidateCommandInput {
 interface BuildCommandInput {
   readonly cwd: string;
   readonly jekyllSite: string;
+  readonly layout: GridRenderLayout | undefined;
   readonly output: GridgenCliOutput;
   readonly source: string;
 }
@@ -160,6 +164,10 @@ interface RunCommandOptions {
   readonly open?: boolean;
   readonly port?: number;
   readonly source: string;
+}
+
+interface BuildCommandOptions {
+  readonly layout?: GridRenderLayout;
 }
 
 interface CollectionValidationTarget {
@@ -264,7 +272,7 @@ async function buildCommand(input: BuildCommandInput): Promise<number> {
     return 1;
   }
 
-  const plannedTargets = await planBuildTargets(targets.value, jekyllRoot);
+  const plannedTargets = await planBuildTargets(targets.value, jekyllRoot, input.layout);
 
   if (!plannedTargets.ok) {
     printError(input.output, plannedTargets.error);
@@ -325,7 +333,8 @@ async function buildCommand(input: BuildCommandInput): Promise<number> {
 
 async function planBuildTargets(
   targets: readonly CollectionValidationTarget[],
-  jekyllRoot: string
+  jekyllRoot: string,
+  layout: GridRenderLayout | undefined
 ): Promise<
   | { readonly ok: true; readonly value: readonly PlannedBuildTarget[] }
   | { readonly error: GridgenError; readonly ok: false }
@@ -349,7 +358,8 @@ async function planBuildTargets(
 
     const plan = planJekyllBuild({
       collection: renderable.value,
-      jekyllRoot
+      jekyllRoot,
+      ...(layout === undefined ? {} : { layout })
     });
 
     /* c8 ignore next 4 */
@@ -499,6 +509,18 @@ function parsePortOption(input: string): number {
   }
 
   return port;
+}
+
+function parseLayoutOption(input: string): GridRenderLayout {
+  if (input === "classic" || input === "poster") {
+    return input;
+  }
+
+  throw new CommanderError(
+    1,
+    "commander.invalidArgument",
+    "Layout must be either classic or poster."
+  );
 }
 
 async function openAuthoringUrl(

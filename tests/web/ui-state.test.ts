@@ -16,10 +16,11 @@ describe("editor mode selection", () => {
     expect(selectEditorMode(640)).toBe("tablet");
     expect(selectEditorMode(1024)).toBe("tablet");
     expect(selectEditorMode(1099)).toBe("tablet");
+    expect(selectEditorMode(1199)).toBe("tablet");
   });
 
   test("uses the persistent desktop inspector at wide workbench widths", () => {
-    expect(selectEditorMode(1100)).toBe("desktop");
+    expect(selectEditorMode(1200)).toBe("desktop");
     expect(selectEditorMode(1440)).toBe("desktop");
   });
 });

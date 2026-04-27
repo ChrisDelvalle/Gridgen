@@ -135,7 +135,7 @@ export function updateItem(
   collection: DraftCollectionJson,
   item: DraftItemJson
 ): Result<DraftCollectionJson, GridgenError> {
-  const link = parseDraftLink(item.link, "item.link");
+  const link = parseDraftLink(item.link ?? "", "item.link");
 
   if (!link.ok) {
     return link;
@@ -153,7 +153,7 @@ export function updateItem(
       description: item.description ?? null,
       image: image?.value ?? null,
       link: link.value,
-      title: item.title
+      title: item.title ?? ""
     },
     type: CollectionOperationType.UpdateItem
   });

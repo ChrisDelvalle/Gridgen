@@ -43,6 +43,50 @@ describe("gridgen build", () => {
     );
   });
 
+  it("builds with the poster layout option", async () => {
+    const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
+    const jekyllRoot = await makeTemporaryDirectory("gridgen-build-jekyll-");
+    await createAndStoreRenderableDraft(workspaceRoot, "Music", "album-a.png");
+    const output = createCliOutput();
+    const exitCode = await runGridgenCli({
+      argv: [
+        "build",
+        "--layout",
+        "poster",
+        path.join(workspaceRoot, "collections", "music.json"),
+        jekyllRoot
+      ],
+      cwd: workspaceRoot,
+      output
+    });
+    const generatedInclude = await fs.readFile(
+      path.join(jekyllRoot, "_includes", "gridgen", "music.html"),
+      "utf8"
+    );
+
+    expect(exitCode).toBe(0);
+    expect(output.stdout).toContain("wrote _includes/gridgen/music.html");
+    expect(generatedInclude).toContain("gridgen-collection--poster");
+    expect(generatedInclude).not.toContain('<h3 class="gridgen-section-title"');
+    await expectFileContains(
+      path.join(jekyllRoot, "assets", "gridgen", "gridgen.css"),
+      ".gridgen-collection--poster"
+    );
+  });
+
+  it("rejects unknown build layouts", async () => {
+    const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
+    const output = createCliOutput();
+    const exitCode = await runGridgenCli({
+      argv: ["build", "--layout", "unknown", workspaceRoot, workspaceRoot],
+      cwd: workspaceRoot,
+      output
+    });
+
+    expect(exitCode).toBe(1);
+    expect(output.stderr.join("\n")).toContain("Layout must be either classic or poster.");
+  });
+
   it("builds every collection in a source workspace", async () => {
     const workspaceRoot = await makeTemporaryDirectory("gridgen-build-workspace-");
     const jekyllRoot = await makeTemporaryDirectory("gridgen-build-jekyll-");
@@ -88,9 +132,9 @@ describe("gridgen build", () => {
 
     const invalidCollection = unwrapOk(
       updateCollection(collection, {
+        name: " ",
         sectionId,
-        title: "Album A",
-        type: CollectionOperationType.AddItem
+        type: CollectionOperationType.RenameSection
       })
     );
 
@@ -103,7 +147,7 @@ describe("gridgen build", () => {
     });
 
     expect(exitCode).toBe(1);
-    expect(output.stderr.join("\n")).toContain("item.invalidLink");
+    expect(output.stderr.join("\n")).toContain("section.emptyName");
     await expectMissing(path.join(jekyllRoot, "_includes", "gridgen", "music.html"));
   });
 
