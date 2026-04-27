@@ -590,3 +590,172 @@ for implementation work and definitions of done.
       UI and building matching Jekyll assets from the CLI.
 - [x] Document the layout option and include usage in the README once the
       implementation is complete.
+
+## Milestone 36: Astro React Build Target Contract
+
+- [ ] Define a finite build target type with `jekyll` and `astro-react`
+      variants.
+- [ ] Make `astro-react` the default build target.
+- [ ] Require explicit `--target jekyll` for Jekyll output.
+- [ ] Add CLI parsing for `gridgen build --target jekyll|astro-react` with
+      structured errors for unknown targets.
+- [ ] Make `poster` the default build layout.
+- [ ] Keep `classic` available through explicit `--layout classic`.
+- [ ] Keep layout selection as a build/render option and do not persist layout
+      choice into authoring collection JSON.
+- [ ] Rename CLI destination concepts from Jekyll-specific language to
+      target-root language where the code is target-agnostic.
+- [ ] Keep source resolution shared: a single collection file builds one
+      collection, and a source workspace builds every JSON file under
+      `collections/`.
+- [ ] Keep target dispatch at the CLI/package boundary; target-specific path
+      and render decisions must live in core build planning.
+- [ ] Preserve the current Jekyll output paths, logs, cleanup behavior, and
+      generated include contents for `--target jekyll`.
+- [ ] Update compatibility tests so old implicit Jekyll/classic assumptions are
+      replaced with explicit `--target jekyll` and `--layout classic` cases.
+
+## Milestone 37: Astro React Core Build Planning
+
+- [ ] Add `AstroReactBuildInput` and `AstroReactBuildPlan` public core types
+      with useful JSDoc.
+- [ ] Plan generated Astro component output at
+      `src/gridgen/GridgenRecommendationGrid.tsx`.
+- [ ] Plan generated Astro stylesheet output at `src/gridgen/gridgen.css`.
+- [ ] Plan one render-ready JSON output per collection at
+      `src/gridgen/<collection-id>.json`.
+- [ ] Keep shared Astro component and stylesheet outputs separate from
+      per-collection JSON and image outputs in the build plan.
+- [ ] Plan processed image outputs under
+      `public/gridgen/assets/<collection-id>/`.
+- [ ] Ensure every planned Astro output path is inside the selected Astro
+      project root.
+- [ ] Reuse existing image crop, resize, format, and deterministic item-image
+      naming rules.
+- [ ] Rewrite generated JSON image references to root-relative public URLs such
+      as `/gridgen/assets/music/album-a.webp`.
+- [ ] Ensure Astro render-ready JSON records `poster` as the default layout
+      unless the user explicitly selects another layout.
+- [ ] Ensure render-ready JSON does not contain source crop metadata, local
+      filesystem paths, or source image file names.
+- [ ] Add public-interface core tests covering Astro path planning, image URL
+      rewriting, layout preservation, optional item fields, and path-safety
+      failures.
+
+## Milestone 38: Astro React Component And Render Data Generation
+
+- [ ] Define the generated render-data JSON schema/version for Astro React
+      output.
+- [ ] Keep the render-data schema separate from the authoring schema so source
+      crop metadata and generated image URLs cannot be confused.
+- [ ] Add a pure core serializer for render-ready collection JSON.
+- [ ] Add a pure core generator for `GridgenRecommendationGrid.tsx`.
+- [ ] Make the generated component accept `collection` as a prop instead of
+      importing generated JSON internally.
+- [ ] Keep CSS import explicit for the Astro user; the generated component must
+      not import `gridgen.css` internally.
+- [ ] Render collection, section, item, link, image, title, and description
+      semantics consistently with the static renderer.
+- [ ] Support all current renderer layouts, including `classic` and `poster`,
+      from the render-ready JSON.
+- [ ] Keep the component Tailwind-independent and shadcn-independent by using
+      namespaced `gridgen-*` classes.
+- [ ] Ensure React output performs no schema repair, filesystem work, image
+      processing, network calls, or authoring-server calls.
+- [ ] Add behavior tests for generated component source contents and
+      render-data serialization through public core APIs.
+
+## Milestone 39: Astro React IO And Safe Writes
+
+- [ ] Generalize generated text-output writing so both Jekyll and Astro plans
+      can use atomic text writes.
+- [ ] Generalize image processing execution so Astro image outputs reuse the
+      existing Sharp-backed pipeline.
+- [ ] Add cleanup for stale files inside
+      `public/gridgen/assets/<collection-id>/` without touching unrelated
+      collections.
+- [ ] Prevent cleanup or writes outside the selected Astro project root.
+- [ ] Write the reusable Astro component and stylesheet once per build, even
+      when building multiple collections.
+- [ ] Write one render-ready JSON file for each discovered collection.
+- [ ] Report possibly touched paths for partial write failures using the
+      existing structured IO failure pattern.
+- [ ] Add IO-level tests for Astro text writes, image writes, cleanup scoping,
+      and outside-root rejection.
+
+## Milestone 40: Astro React CLI Build Integration
+
+- [ ] Implement default `gridgen build <source-file-or-dir> <astro-site>` as an
+      Astro React poster build.
+- [ ] Implement explicit
+      `gridgen build --target astro-react <source-file-or-dir> <astro-site>`.
+- [ ] Support single collection file input for Astro React builds.
+- [ ] Support source workspace input for Astro React builds, building every
+      collection under `collections/` with one command.
+- [ ] Validate all selected collections and source assets before writing Astro
+      output.
+- [ ] Print clear write logs for the component, stylesheet, collection JSON
+      files, and processed image assets.
+- [ ] Preserve actionable structured errors for invalid collection JSON,
+      missing source assets, unsafe paths, and unknown build targets.
+- [ ] Add CLI tests covering single-file Astro builds, workspace Astro builds,
+      generated output contents, image URL rewriting, and failure behavior.
+- [ ] Ensure Jekyll CLI tests cover explicit `--target jekyll` usage.
+- [ ] Ensure layout CLI tests cover default poster behavior and explicit
+      `--layout classic` behavior.
+
+## Milestone 41: Astro React Documentation And Example
+
+- [ ] Document the Astro React workflow in the README, including the one-command
+      default build from a source workspace.
+- [ ] Document that Astro React and poster layout are the defaults.
+- [ ] Document explicit Jekyll output with `--target jekyll`.
+- [ ] Document explicit classic layout output with `--layout classic`.
+- [ ] Document the three-import usage pattern for Astro pages.
+- [ ] Document optional Astro hydration at the callsite with examples such as
+      `client:visible`.
+- [ ] Document that Gridgen does not require Tailwind and that generated CSS is
+      ordinary namespaced CSS.
+- [ ] Document that the target Astro project must already be configured for
+      React, such as through `@astrojs/react`.
+- [ ] Add or update an example Astro target fixture showing `src/gridgen/` and
+      `public/gridgen/` output shape.
+- [ ] Include guidance for users who want to replace generated CSS or swap
+      collection JSON while reusing the same component.
+
+## Milestone 42: Bun And Bunx Packaging
+
+- [ ] Define the publishable package shape for Gridgen with a `gridgen` binary.
+- [ ] Decide whether the publishable package is the repository root package or
+      a dedicated package workspace.
+- [ ] Ensure the published package is not marked `private`.
+- [ ] Add package metadata needed for installable CLI use: `name`, `version`,
+      `type`, `bin`, `files`, `license`, repository metadata, and useful
+      package description.
+- [ ] Build the CLI into a published artifact instead of exposing raw workspace
+      TypeScript files.
+- [ ] Use a Bun-compatible executable shebang for the generated CLI entrypoint.
+- [ ] Bundle or otherwise resolve internal workspace packages so published
+      installs do not depend on `workspace:*` specifiers.
+- [ ] Include the built Vite authoring UI assets in the package so
+      `gridgen run` works after install.
+- [ ] Keep runtime/native dependencies such as `sharp` declared correctly for
+      user installs.
+- [ ] Add a package verification script that packs the install artifact and
+      tests the packed package, not only the monorepo source tree.
+- [ ] Add release/build scripts that build the web UI, bundle the CLI, copy
+      packaged assets, and produce the installable artifact in one predictable
+      flow.
+- [ ] Verify packed-package behavior for `gridgen --help`, `gridgen run`,
+      default Astro poster build, and explicit `--target jekyll` build.
+- [ ] Document Git/GitHub installation for alpha usage, including pinned tag or
+      commit examples.
+- [ ] Document local project installation with Bun from a pinned GitHub tag or
+      commit.
+- [ ] Document registry/bunx usage as the eventual stable path, such as
+      `bunx gridgen run` and `bunx gridgen build ./gridgen ./my-astro-site`.
+- [ ] Document installation prerequisites, including Bun and target Astro React
+      requirements.
+- [ ] Add README instructions for first-time setup, authoring with
+      `gridgen run`, building default Astro output, and building explicit
+      Jekyll output.

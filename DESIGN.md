@@ -1,10 +1,10 @@
 # Design
 
 Gridgen is a Bun-first TypeScript tool for creating, editing, previewing, and
-building static recommendation grids for Jekyll blogs. This document is the
-developer-facing architecture guide. It should explain where code belongs, which
-boundaries must stay stable, and how to extend the project without weakening
-type safety or long-term maintainability.
+building static recommendation grids for Astro sites and Jekyll blogs. This
+document is the developer-facing architecture guide. It should explain where
+code belongs, which boundaries must stay stable, and how to extend the project
+without weakening type safety or long-term maintainability.
 
 The core design idea is simple: keep domain logic pure and deterministic, keep
 messy work at the edges, and use types plus validation so invalid state is hard
@@ -19,12 +19,25 @@ Gridgen has two user-facing workflows:
    user create collections, edit sections, add items, upload images, save, and
    preview the final rendered grid.
 
-2. `gridgen build <source> <jekyll-site>`
-   Reads saved collection JSON and image assets, then writes static
-   Jekyll-ready output: Liquid includes, namespaced CSS, and optimized images.
+2. `gridgen build <source> <site-root>`
+   Reads saved collection JSON and image assets, then writes generated output
+   for the selected site target. The default target is Astro React. Jekyll
+   remains supported through `--target jekyll`.
 
-The rendered output should be boring, portable static assets. A Jekyll user
-should be able to include a generated grid with a line like:
+The rendered output should be boring and portable. An Astro user should be able
+to render generated data with a reusable component:
+
+```astro
+---
+import GridgenRecommendationGrid from "../gridgen/GridgenRecommendationGrid";
+import music from "../gridgen/music.json";
+import "../gridgen/gridgen.css";
+---
+
+<GridgenRecommendationGrid collection={music} />
+```
+
+A Jekyll user should still be able to include a generated grid with a line like:
 
 ```liquid
 {% include gridgen/music.html %}
@@ -93,7 +106,7 @@ Preview must not be a React approximation of the final output.
 ### Journey: Build For Jekyll
 
 1. The user saves the collection in the authoring UI.
-2. The user runs `gridgen build ./gridgen ./my-jekyll-blog`.
+2. The user runs `gridgen build --target jekyll ./gridgen ./my-jekyll-blog`.
 3. The CLI discovers every JSON file in `./gridgen/collections`.
 4. Gridgen validates collections and source asset references before writing.
 5. Gridgen writes `_includes/gridgen/<collection-id>.html`.
@@ -105,10 +118,59 @@ Preview must not be a React approximation of the final output.
 The build command should report what it wrote and make validation failures
 actionable.
 
+### Journey: Build For Astro React
+
+Astro support should reuse the authoring workspace and image-processing
+pipeline. The user should not need to run one build command per collection.
+
+1. The user saves one or more collections in the authoring UI.
+2. The user runs `gridgen build ./gridgen ./my-astro-site`.
+3. The CLI discovers every JSON file in `./gridgen/collections`.
+4. Gridgen validates collections and source asset references before writing.
+5. Gridgen writes one reusable React component under
+   `src/gridgen/GridgenRecommendationGrid.tsx`.
+6. Gridgen writes one reusable stylesheet under `src/gridgen/gridgen.css`.
+7. Gridgen writes one render-ready JSON file per collection under
+   `src/gridgen/<collection-id>.json`.
+8. Gridgen writes processed WebP images under
+   `public/gridgen/assets/<collection-id>/`.
+9. Each generated JSON file references images with root-relative public URLs,
+   such as `/gridgen/assets/music/album-a.webp`.
+10. The Astro user imports the reusable component, whichever collection JSON
+    they want, and the stylesheet:
+
+```astro
+---
+import GridgenRecommendationGrid from "../gridgen/GridgenRecommendationGrid";
+import music from "../gridgen/music.json";
+import "../gridgen/gridgen.css";
+---
+
+<GridgenRecommendationGrid collection={music} />
+```
+
+Hydration remains an Astro callsite decision:
+
+```astro
+<GridgenRecommendationGrid collection={music} client:visible />
+```
+
+The generated React component must not import the generated CSS or collection
+JSON itself. Keeping the imports separate makes the output explicit and lets
+users swap data or replace styling without editing generated component code.
+
+Astro React is the default build target. The default visual layout is the
+opinionated poster layout; `classic` remains available through an explicit
+layout option for users who want the simpler embeddable card grid.
+
 ## Goals
 
 - Provide a straightforward local authoring tool for recommendation grids.
+- Make Astro React the default generated output target.
+- Make the `/mu/core`-style poster layout the default visual layout.
 - Produce deterministic, self-contained Jekyll output.
+- Produce deterministic Astro React output that can render all generated
+  collections with one reusable component and one reusable stylesheet.
 - Keep rendered grids static by default: HTML, CSS, and images, with no
   JavaScript requirement.
 - Use strict TypeScript and runtime validation to make invalid state difficult
@@ -720,9 +782,17 @@ export function updateCollection(
 
 export function planJekyllBuild(input: JekyllBuildInput): Result<JekyllBuildPlan, GridgenError>;
 
+export function planAstroReactBuild(
+  input: AstroReactBuildInput
+): Result<AstroReactBuildPlan, GridgenError>;
+
 export function renderGridHtml(input: RenderGridInput): string;
 
 export function renderGridCss(input: RenderGridCssInput): string;
+
+export function renderGridDataJson(input: RenderGridInput): string;
+
+export function renderAstroReactComponent(input: AstroReactComponentInput): string;
 
 export function normalizeSlug(input: string): Result<Slug, GridgenError>;
 
@@ -779,12 +849,41 @@ Generated includes should reference the shared stylesheet:
 Per-collection CSS should not be emitted in version 1 unless a later milestone
 adds collection-specific theming.
 
+Astro React output should target the Astro project root:
+
+```text
+<astro-site>/
+  src/
+    gridgen/
+      GridgenRecommendationGrid.tsx
+      gridgen.css
+      <collection-id>.json
+  public/
+    gridgen/
+      assets/
+        <collection-id>/
+          <item-image>.webp
+```
+
+The split between `src/` and `public/` is deliberate. Astro can import the
+component, CSS, and JSON from `src/gridgen/`. Browser image `src` attributes
+need stable public URLs, so generated images should live under `public/gridgen`
+and generated JSON should reference them with root-relative URLs. Do not put
+JSON-referenced image paths under `src/assets` unless the build target also
+generates static imports or an Astro-specific asset manifest.
+
+Astro React output should remain Tailwind-independent. The generated component
+uses namespaced `gridgen-*` classes, and users may import, override, or replace
+the generated CSS in their Astro project.
+
 ## Output Ownership And Atomic Writes
 
 Gridgen may overwrite files only inside Gridgen-owned output paths:
 
 - `_includes/gridgen/`
 - `assets/gridgen/`
+- `src/gridgen/` for Astro React component, stylesheet, and render-ready JSON
+- `public/gridgen/` for Astro React processed public image assets
 
 Generated text files should include a short marker comment:
 
@@ -806,6 +905,9 @@ Write policy:
 - A build may remove stale files inside `assets/gridgen/<collection-id>/` for
   the collection it is currently rebuilding, because that directory is
   Gridgen-owned generated output.
+- An Astro React build may remove stale files inside
+  `public/gridgen/assets/<collection-id>/` for the collection it is currently
+  rebuilding, because that directory is Gridgen-owned generated output.
 - A build should not remove generated files for unrelated collections unless a
   future explicit clean command is added.
 - If a build fails partway through, report which files may have been touched.
@@ -980,9 +1082,25 @@ Generated CSS should:
 The default output should be opinionated enough to look good without theme
 integration, but conservative enough not to fight the blog.
 
+### Layout Defaults
+
+The poster layout is the default generated presentation. This matches the
+product's core `/mu/core` recommendation-grid purpose and keeps manual preview,
+Astro output, and Jekyll output visually aligned.
+
+The classic layout remains a named compatibility option for users who want a
+quieter embeddable card grid:
+
+```text
+gridgen build --layout classic <source-file-or-dir> <site-root>
+```
+
+Layout defaults belong in typed build/render options, not as ad hoc conditionals
+inside the CLI, server, or generated component.
+
 ### Renderer Contract
 
-Version 1 renderer decisions:
+Jekyll renderer decisions:
 
 - Emit one shared CSS file at `assets/gridgen/gridgen.css`.
 - Emit one include per collection at `_includes/gridgen/<collection-id>.html`.
@@ -1000,13 +1118,58 @@ Version 1 renderer decisions:
 If a future option changes any of these behaviors, it should be expressed as a
 typed renderer option and covered by tests.
 
+### Astro React Output Contract
+
+The Astro React target should generate a small typed component and render-ready
+JSON. It should not require a generated `.astro` wrapper.
+
+Component contract:
+
+```tsx
+export interface GridgenRecommendationGridProps {
+  readonly collection: GridgenRenderedCollection;
+}
+
+export function GridgenRecommendationGrid(props: GridgenRecommendationGridProps): JSX.Element;
+```
+
+The component should:
+
+- render the same semantic collection, section, item, link, image, title, and
+  description structure as the static renderer
+- support the same named layout values as the static renderer, including
+  `classic` and `poster`
+- use only the render-ready JSON passed through props
+- perform no filesystem work, image processing, schema repair, or network calls
+- avoid importing generated CSS or generated JSON internally
+- avoid depending on Tailwind, shadcn/ui, or authoring UI components
+- remain compatible with Astro hydration directives such as `client:visible`
+  without requiring hydration by default
+
+Generated JSON contract:
+
+- one JSON file per collection
+- current schema/version field for the generated render-data contract
+- collection ID and title
+- selected layout
+- ordered sections
+- ordered items
+- optional title, description, link, and image fields preserved as optional
+- image `src` values already rewritten to public Astro URLs
+- no source crop metadata required by the component
+- no local filesystem paths
+
+This render-ready JSON is not the same as the authoring JSON. Authoring JSON
+keeps source image names and crop metadata; Astro render JSON contains only
+presentation-ready data.
+
 ## CLI Commands
 
 Initial command plan:
 
 ```text
 gridgen run [--source <dir>] [--port <port>] [--open]
-gridgen build <source-file-or-dir> <jekyll-site>
+gridgen build [--target astro-react|jekyll] [--layout poster|classic] <source-file-or-dir> <site-root>
 gridgen validate <source-file-or-dir>
 ```
 
@@ -1021,9 +1184,14 @@ Command responsibilities:
 - `run` starts the local server and serves the authoring UI.
 - `run --open` opens the local authoring URL in the browser. Without `--open`,
   `run` prints the URL and leaves browser opening to the user.
-- `build` writes Jekyll output. Given a single collection file, it builds that
-  collection. Given a source workspace directory, it builds all collections in
-  `collections/`.
+- `build` defaults to `--target astro-react` and `--layout poster`.
+- `build --target astro-react` writes one reusable React component, one
+  reusable stylesheet, one render-ready JSON file per collection, and processed
+  public image assets into an Astro project root.
+- `build --target jekyll` writes Jekyll output. Given a single collection file,
+  it builds that collection. Given a source workspace directory, it builds all
+  collections in `collections/`.
+- `build --layout classic` explicitly selects the simpler compatibility layout.
 - `validate` checks collection JSON and asset references without writing output.
 - `init` creates a starter authoring workspace if that proves useful.
 
@@ -1230,6 +1398,12 @@ Development/test dependencies:
 - Playwright
   Used for end-to-end authoring flows once the local server and editor exist.
   It is not a production dependency.
+
+Astro React output should not add `astro`, `@astrojs/react`, `react`, or
+`react-dom` as Gridgen runtime dependencies. Those are dependencies of the
+target Astro project. Gridgen should generate source files that compile in an
+Astro project already configured for React, and documentation should state that
+requirement clearly.
 
 Do not keep planned dependencies installed only because they are planned. Knip
 should remain useful and strict.
