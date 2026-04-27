@@ -11,7 +11,14 @@ opinionated `/mu/core`-style poster grid.
 During alpha development, install from a pinned GitHub tag or commit:
 
 ```sh
-bun add -d github:ChrisDelvalle/Gridgen#v0.0.1-alpha.0
+bun add -d github:ChrisDelvalle/Gridgen#v0.0.1-alpha.1
+```
+
+GitHub-installed alpha builds run through Bun's local binary resolution:
+
+```sh
+bun run gridgen run --open
+bun run gridgen build ./gridgen .
 ```
 
 For local testing from a checked-out repository, install by filesystem path:
@@ -41,7 +48,7 @@ React, such as through `@astrojs/react`.
 Start the local authoring UI:
 
 ```sh
-bunx gridgen run --open
+bun run gridgen run --open
 ```
 
 By default, `gridgen run` uses `./gridgen` as the source workspace. The UI lets
@@ -53,7 +60,7 @@ previews, save, and open the static preview route.
 Build saved collections into an Astro project:
 
 ```sh
-bunx gridgen build ./gridgen ./my-astro-site
+bun run gridgen build ./gridgen ./my-astro-site
 ```
 
 The command discovers every JSON file in `./gridgen/collections`, processes
@@ -100,7 +107,7 @@ reusing the same component.
 Jekyll output is still supported explicitly:
 
 ```sh
-bunx gridgen build --target jekyll ./gridgen ./my-jekyll-blog
+bun run gridgen build --target jekyll ./gridgen ./my-jekyll-blog
 ```
 
 This writes only Gridgen-owned output paths:
@@ -128,13 +135,13 @@ Use the generated include from a Jekyll page or post:
 Poster layout is the default:
 
 ```sh
-bunx gridgen build ./gridgen ./my-astro-site
+bun run gridgen build ./gridgen ./my-astro-site
 ```
 
 Use the simpler classic layout explicitly:
 
 ```sh
-bunx gridgen build --layout classic ./gridgen ./my-astro-site
+bun run gridgen build --layout classic ./gridgen ./my-astro-site
 ```
 
 Repeated builds with unchanged input should produce stable output.

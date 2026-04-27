@@ -1,7 +1,6 @@
 Previous project/
 .DS_Store
 coverage/
-dist/
 node_modules/
 release/
 test-results/
@@ -10,6 +9,9 @@ tmp/
 *.zip
 
 # Vite
+dist/
+!/dist/
+!/dist/**
 apps/web/dist/
 
 # Local env

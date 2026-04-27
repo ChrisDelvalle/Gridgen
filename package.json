@@ -1,6 +1,6 @@
 {
   "name": "gridgen",
-  "version": "0.0.0",
+  "version": "0.0.1-alpha.1",
   "description": "Author and build opinionated recommendation grids for Astro and Jekyll.",
   "license": "MIT",
   "repository": {
@@ -58,10 +58,6 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
-    "@gridgen/cli": "workspace:*",
-    "@gridgen/core": "workspace:*",
-    "@gridgen/io": "workspace:*",
-    "@gridgen/server": "workspace:*",
     "@playwright/test": "^1.59.1",
     "@types/bun": "1.3.12",
     "@types/node": "^24.12.2",

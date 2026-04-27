@@ -12,11 +12,23 @@ await fs.mkdir(temporaryDirectory, { recursive: true });
 await fs.mkdir(packageDirectory, { recursive: true });
 
 await runCommand(["bun", "run", "build:package"]);
+await verifyGitAlphaArtifactsAreTrackable();
 await runCommand(["bun", "pm", "pack", "--destination", packageDirectory]);
 await verifyHelp();
 await verifyDefaultAstroBuild();
 await verifyExplicitJekyllBuild();
 await verifyRunServesPackagedWebUi();
+
+async function verifyGitAlphaArtifactsAreTrackable(): Promise<void> {
+  await assertPathExists(cliPath);
+  await assertPathExists(path.join(rootDirectory, "dist", "web", "index.html"));
+
+  const ignored = await runCommandWithExitCode(["git", "check-ignore", "-q", cliPath]);
+
+  if (ignored.exitCode === 0) {
+    throw new Error("dist/bin.js is ignored; GitHub alpha installs need the built binary.");
+  }
+}
 
 async function verifyHelp(): Promise<void> {
   const result = await runCommand(["bun", cliPath, "--help"]);
@@ -131,6 +143,23 @@ async function runCommand(command: readonly string[]): Promise<{
   readonly stderr: string;
   readonly stdout: string;
 }> {
+  const result = await runCommandWithExitCode(command);
+
+  if (result.exitCode !== 0) {
+    throw new Error(`Command failed: ${command.join(" ")}\n${result.stderr}`);
+  }
+
+  return {
+    stderr: result.stderr,
+    stdout: result.stdout
+  };
+}
+
+async function runCommandWithExitCode(command: readonly string[]): Promise<{
+  readonly exitCode: number;
+  readonly stderr: string;
+  readonly stdout: string;
+}> {
   const subprocess = Bun.spawn([...command], {
     stderr: "pipe",
     stdout: "pipe"
@@ -141,9 +170,5 @@ async function runCommand(command: readonly string[]): Promise<{
     subprocess.exited
   ]);
 
-  if (exitCode !== 0) {
-    throw new Error(`Command failed: ${command.join(" ")}\n${stderr}`);
-  }
-
-  return { stderr, stdout };
+  return { exitCode, stderr, stdout };
 }

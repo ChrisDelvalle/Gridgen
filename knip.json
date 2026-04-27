@@ -1,6 +1,12 @@
 {
   "$schema": "./node_modules/knip/schema.json",
-  "ignoreDependencies": ["sharp"],
+  "ignoreDependencies": [
+    "@gridgen/cli",
+    "@gridgen/core",
+    "@gridgen/io",
+    "@gridgen/server",
+    "sharp"
+  ],
   "ignore": ["apps/web/src/react-jsx-compat.d.ts"],
   "ignoreBinaries": ["gitleaks"],
   "ignoreIssues": {
