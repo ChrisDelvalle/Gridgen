@@ -40,8 +40,16 @@ bun install
 bun run gridgen run --open
 ```
 
-Astro React output assumes the target Astro project is already configured for
-React, such as through `@astrojs/react`.
+Astro output requires the target Astro project to support React. MDX is only
+needed when embedding a grid directly inside Markdown-style article content:
+
+```sh
+bunx astro add react
+bunx astro add mdx
+```
+
+Skip `bunx astro add mdx` if you only render grids from `.astro` pages or
+layouts.
 
 ## Authoring
 
@@ -80,19 +88,39 @@ my-astro-site/
           album-a.webp
 ```
 
+Configure a stable import alias once in the Astro project:
+
+```jsonc
+// tsconfig.json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@gridgen/*": ["src/gridgen/*"]
+    }
+  }
+}
+```
+
+Preserve any existing `extends`, `compilerOptions`, or project-specific
+settings already in your `tsconfig.json`. Astro supports aliases from
+`tsconfig.json` or `jsconfig.json`; use the same `compilerOptions` block in
+`jsconfig.json` for JavaScript-only projects.
+
 Use the generated component, data, and CSS from an Astro page:
 
 ```astro
 ---
-import GridgenRecommendationGrid from "../gridgen/GridgenRecommendationGrid";
-import music from "../gridgen/music.json";
-import "../gridgen/gridgen.css";
+import GridgenRecommendationGrid from "@gridgen/GridgenRecommendationGrid";
+import music from "@gridgen/music.json";
+import "@gridgen/gridgen.css";
 ---
 
 <GridgenRecommendationGrid collection={music} />
 ```
 
-Hydration is optional and remains an Astro callsite decision:
+No `client:*` directive is needed for the current grid because it renders static
+React output. Use one only if the generated component becomes interactive later:
 
 ```astro
 <GridgenRecommendationGrid collection={music} client:visible />
@@ -101,6 +129,63 @@ Hydration is optional and remains an Astro callsite decision:
 The generated CSS is ordinary namespaced CSS, not Tailwind. You can replace or
 override `gridgen.css`, or swap in a different generated collection JSON while
 reusing the same component.
+
+## Astro MDX Articles
+
+Use `.mdx` files for Markdown-style articles that embed React components in the
+article body. This keeps normal Markdown authoring while allowing a generated
+Gridgen component to appear between paragraphs.
+
+Start from a target Astro project:
+
+```sh
+bun add -d github:ChrisDelvalle/Gridgen#v0.0.1-alpha.1
+bunx astro add react
+bunx astro add mdx
+bun run gridgen run --open
+bun run gridgen build ./gridgen .
+```
+
+Configure the `@gridgen/*` alias:
+
+```jsonc
+// tsconfig.json or jsconfig.json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@gridgen/*": ["src/gridgen/*"]
+    }
+  }
+}
+```
+
+Then create an MDX article such as `docs/hello-world.mdx`:
+
+```mdx
+---
+title: Hello World
+date: 2026-04-27
+description: A small article with an embedded recommendation grid.
+---
+
+import GridgenRecommendationGrid from "@gridgen/GridgenRecommendationGrid";
+import myFavoriteMusic from "@gridgen/my-favorite-music.json";
+import "@gridgen/gridgen.css";
+
+This is a normal Markdown paragraph before the grid.
+
+The grid below is rendered from the generated Gridgen collection JSON.
+
+<GridgenRecommendationGrid collection={myFavoriteMusic} />
+
+The article continues with more Markdown after the grid.
+```
+
+Grid images are public assets referenced by generated JSON, such as
+`/gridgen/assets/my-favorite-music/...`. Run `bun run gridgen build ./gridgen .`
+again after saving Gridgen changes, then run the Astro project build or dev
+server normally.
 
 ## Build For Jekyll
 
