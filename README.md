@@ -1,36 +1,28 @@
 # Gridgen
 
-Gridgen is a Bun-first TypeScript tool for authoring recommendation grids and
-building static assets for Astro and Jekyll.
+![Gridgen authoring UI demo](docs/assets/gridgen-demo.gif)
 
-The default build target is Astro React. The default visual layout is the
-opinionated `/mu/core`-style poster grid.
+Gridgen is a Bun tool for authoring recommendation grids and building static assets for Astro and Jekyll.
+
+The default build target is Astro React.
 
 ## Installation
 
-During alpha development, install from a pinned GitHub tag or commit:
+Install from a pinned GitHub tag or commit:
 
 ```sh
 bun add -d github:ChrisDelvalle/Gridgen#v0.0.1-alpha.1
 ```
 
-GitHub-installed alpha builds run through Bun's local binary resolution:
+Run the editor UI:
 
 ```sh
 bun run gridgen run --open
+```
+
+Build React component for Astro:
+```sh
 bun run gridgen build ./gridgen .
-```
-
-For local testing from a checked-out repository, install by filesystem path:
-
-```sh
-bun add -d /Users/irk/Developer/JAVASCRIPT/gridgen
-```
-
-After a registry release, the intended stable usage is:
-
-```sh
-bunx gridgen run --open
 ```
 
 For local development inside this repository:
